@@ -1,0 +1,20 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml:2:1-4:12
+INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml:2:1-4:12
+	package
+		INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml:2:11-69
+uses-permission#com.google.android.gms.permission.AD_ID
+ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml:3:5-79
+	android:name
+		ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml:3:22-76
+uses-sdk
+INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml
+INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Core/src/main/AndroidManifest.xml

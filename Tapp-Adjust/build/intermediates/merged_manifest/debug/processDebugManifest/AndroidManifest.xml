@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.tapp.adjust" >
+
+    <uses-sdk android:minSdkVersion="24" />
+
+    <application>
+        <provider
+            android:name="com.example.tapp.services.affiliate.adjust.AdjustServiceRegistrar"
+            android:authorities="${applicationId}.TappAdjustRegistrar"
+            android:exported="false" />
+    </application>
+
+</manifest>

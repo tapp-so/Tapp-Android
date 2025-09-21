@@ -1,0 +1,26 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:2:1-9:12
+INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:2:1-9:12
+	package
+		INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:2:11-69
+application
+ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:3:5-8:19
+provider#com.example.tapp.services.affiliate.adjust.AdjustServiceRegistrar
+ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:4:9-7:40
+	android:authorities
+		ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:6:13-71
+	android:exported
+		ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:7:13-37
+	android:name
+		ADDED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:5:13-93
+uses-sdk
+INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml
+INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml
