@@ -1,11 +1,13 @@
 package com.tapp.tappnative
 
 import android.content.Context
+import com.example.tapp.TappEngine
 import com.example.tapp.dependencies.Dependencies
 import com.example.tapp.services.affiliate.AffiliateServiceFactory
 import com.tapp.tappnative.services.affiliate.native.NativeService
 import com.example.tapp.services.network.NetworkManager
 import com.example.tapp.utils.KeystoreUtils
+import com.example.tapp.utils.TappConfiguration
 
 class Tapp(context: Context) {
 
@@ -16,15 +18,20 @@ class Tapp(context: Context) {
             context = context,
             keystoreUtils = KeystoreUtils(context),
             networkManager = NetworkManager(),
-            affiliateServiceFactory = AffiliateServiceFactory()
+            affiliateServiceFactory = AffiliateServiceFactory
         )
         engine = TappEngine(dependencies)
         dependencies.tappInstance = engine
 
-        AffiliateServiceFactory.register(com.example.tapp.models.Affiliate.TAPP) { deps -> com.example.tapp.services.affiliate.native.NativeAffiliateService(deps) }
+        AffiliateServiceFactory.register(com.example.tapp.models.Affiliate.TAPP) { deps -> com.tapp.tappnative.services.affiliate.native.NativeAffiliateService(deps) }
     }
 
+    fun start(config: TappConfiguration) = engine.start(config)
+
     fun dummyMethod() {
-        (engine.dependencies.affiliateServiceFactory.getAffiliateService(engine.dependencies.keystoreUtils.getConfig()?.affiliate, engine.dependencies) as? NativeService)?.dummyNativeMethod()
+        (engine.dependencies.keystoreUtils.getConfig()?.affiliate?.let {
+            engine.dependencies.affiliateServiceFactory.getAffiliateService(
+                it, engine.dependencies)
+        } as? NativeService)?.dummyNativeMethod()
     }
 }

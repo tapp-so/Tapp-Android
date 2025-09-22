@@ -7,13 +7,13 @@ import java.net.URL
 @Serializable
 enum class Affiliate {
     ADJUST,
-    APPFLYER,
+    APPSFLYER,
     TAPP;
 
     fun toIntValue(): Int {
         return when (this) {
             ADJUST -> 1
-            APPFLYER -> 2
+            APPSFLYER -> 2
             TAPP -> 3
         }
     }
@@ -44,7 +44,7 @@ fun Uri.param(key: String): String? {
 fun Uri.linkToken(affiliate: Affiliate): String? {
     return when (affiliate) {
         Affiliate.ADJUST -> this.param(AdjustURLParamKey.TOKEN.value)
-        Affiliate.APPFLYER -> this.param(AppsflyerURLParamKey.TOKEN.value)
+        Affiliate.APPSFLYER -> this.param(AppsflyerURLParamKey.TOKEN.value)
         Affiliate.TAPP -> this.param(TappURLParamKey.TOKEN.value)
     }
 }

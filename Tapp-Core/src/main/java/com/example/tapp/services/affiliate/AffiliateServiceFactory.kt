@@ -8,10 +8,6 @@ object AffiliateServiceFactory {
 
     private val serviceProviders = mutableMapOf<Affiliate, (Dependencies) -> AffiliateService>()
 
-    init {
-        // The Tapp service is a core component, so we can register it directly.
-        register(Affiliate.TAPP) { TappAffiliateService(it) }
-    }
 
     fun register(affiliate: Affiliate, provider: (Dependencies) -> AffiliateService) {
         if (!serviceProviders.containsKey(affiliate)) {

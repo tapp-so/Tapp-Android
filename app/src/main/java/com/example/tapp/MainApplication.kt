@@ -20,6 +20,7 @@ class MainApplication : Application() {
             env = Environment.SANDBOX,
             tappToken = "A6zwAAy6EW", // Replace with a real token for testing
             affiliate = Affiliate.ADJUST
+            // affiliate = Affiliate.TAPP
         )
 
         // Initialize the Tapp SDK

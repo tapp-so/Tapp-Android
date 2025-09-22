@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity(), DeferredLinkDelegate {
         val eventButton: Button = findViewById(R.id.eventButton)
         eventButton.setOnClickListener {
             val customEvent = RequestModels.TappEvent(
-                eventName = RequestModels.EventAction.tapp_begin_tutorial
+                eventName = RequestModels.EventAction.tapp_create_role
             )
             MainApplication.tapp.handleTappEvent(customEvent)
         }
@@ -26,6 +26,11 @@ class MainActivity : AppCompatActivity(), DeferredLinkDelegate {
         testEventButton.setOnClickListener {
             MainApplication.tapp.simulateTestEvent()
         }
+
+        // val nativeDummyButton: Button = findViewById(R.id.nativeDummyButton)
+        // nativeDummyButton.setOnClickListener {
+        //     // MainApplication.tapp.dummyMethod()
+        // }
     }
 
     override fun testListener(test: String) {

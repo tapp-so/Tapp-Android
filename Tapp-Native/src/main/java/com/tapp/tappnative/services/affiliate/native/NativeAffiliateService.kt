@@ -30,4 +30,8 @@ internal class NativeAffiliateService(private val dependencies: Dependencies) : 
     override fun dummyNativeMethod() {
         Logger.logInfo("Dummy native method called")
     }
+
+    override fun listener() {
+        TODO("Not yet implemented")
+    }
 }
