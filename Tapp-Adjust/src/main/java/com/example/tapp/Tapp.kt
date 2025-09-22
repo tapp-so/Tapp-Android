@@ -47,6 +47,8 @@ class Tapp(context: Context) {
         )
         engine = TappEngine(dependencies)
         dependencies.tappInstance = engine
+
+        AffiliateServiceFactory.register(com.example.tapp.models.Affiliate.ADJUST) { deps -> com.example.tapp.services.affiliate.adjust.AdjustAffiliateService(deps) }
     }
 
     // --- Delegated Properties & Methods from TappEngine ---

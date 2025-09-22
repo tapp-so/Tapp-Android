@@ -18,3 +18,4 @@ rootProject.name = "Tapp-SDK-Standalone"
 include(":app")
 include(":Tapp-Core")
 include(":Tapp-Adjust")
+include(":Tapp-Appsflyer")
