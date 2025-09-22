@@ -1,8 +1,21 @@
+# Gradle
 .gradle/
 **/build/
+
+# Android Studio / IntelliJ
 .idea/
 *.iml
+*.ipr
+*.iws
+
+# Local config
 local.properties
+
+# Logs
 *.log
+
+# Mac / OS junk
 .DS_Store
+
+# Kotlin/Java compile artifacts
 **/out/
