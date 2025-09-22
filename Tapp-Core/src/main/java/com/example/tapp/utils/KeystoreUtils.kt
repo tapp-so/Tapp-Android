@@ -18,7 +18,7 @@ class KeystoreUtils(context: Context) {
 
     private val keyAlias = "tapp_c"
     private val keyStore: KeyStore = KeyStore.getInstance("AndroidKeyStore")
-    private val sharedPreferences = context.getSharedPreferences("keystore_prefs", Context.MODE_PRIVATE)
+    private val sharedPreferences = context.getSharedPreferences("tapp_keystore_prefs_${context.packageName}", Context.MODE_PRIVATE)
 
     private val json = Json { encodeDefaults = true }
 

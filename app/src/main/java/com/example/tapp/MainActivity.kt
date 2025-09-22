@@ -26,6 +26,11 @@ class MainActivity : AppCompatActivity(), DeferredLinkDelegate {
         testEventButton.setOnClickListener {
             MainApplication.tapp.simulateTestEvent()
         }
+
+        // val dummyButton: Button = findViewById(R.id.dummyButton)
+        // dummyButton.setOnClickListener {
+        //     MainApplication.tapp.dummyMethod()
+        // }
     }
 
     override fun testListener(test: String) {

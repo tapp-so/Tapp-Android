@@ -21,10 +21,7 @@ object AffiliateServiceFactory {
 
     fun getAffiliateService(affiliate: Affiliate, dependencies: Dependencies): AffiliateService? {
         val provider = serviceProviders[affiliate]
-        // Also handle the Appsflyer case, returning the existing placeholder
-//        if (affiliate == Affiliate.APPFLYER) {
-//            return com.example.tapp.services.affiliate.appFlyer.AppsflyerAffiliateService(dependencies)
-//        }
+
         return provider?.invoke(dependencies)
     }
 }

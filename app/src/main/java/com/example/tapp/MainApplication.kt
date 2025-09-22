@@ -16,9 +16,9 @@ class MainApplication : Application() {
 
         // Create the Tapp SDK configuration
         val tappConfig = TappConfiguration(
-            authToken = "16|UH7onZ80DAC6AuIHLNGGYy80kFAViP5TELjVbWJT11134e3c             ", // Replace with a real token for testing
+            authToken = "22|564Dumifqbsqlwp7070h75iES1G6QtRZiN2jyuitced44ca0             ", // Replace with a real token for testing
             env = Environment.SANDBOX,
-            tappToken = "A6zwAAy6EW", // Replace with a real token for testing
+            tappToken = "vicQCMpNj9", // Replace with a real token for testing
             affiliate = Affiliate.ADJUST
         )
 

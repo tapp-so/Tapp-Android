@@ -4,16 +4,4 @@
 4
 5    <uses-sdk android:minSdkVersion="24" />
 6
-7    <application>
-7-->/Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:3:5-8:19
-8        <provider
-8-->/Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:4:9-7:40
-9            android:name="com.example.tapp.services.affiliate.adjust.AdjustServiceRegistrar"
-9-->/Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:5:13-93
-10            android:authorities="${applicationId}.TappAdjustRegistrar"
-10-->/Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:6:13-71
-11            android:exported="false" />
-11-->/Users/nikolaostseperkas/Developer/Coding/Android/Tapp-so/Tapp-Adjust/src/main/AndroidManifest.xml:7:13-37
-12    </application>
-13
-14</manifest>
+7</manifest>

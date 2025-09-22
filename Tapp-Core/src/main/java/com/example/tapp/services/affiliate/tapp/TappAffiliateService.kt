@@ -178,7 +178,7 @@ internal class TappAffiliateService(private val dependencies: Dependencies) : Af
 
         return when (config.affiliate) {
             Affiliate.ADJUST -> url.param(AdjustURLParamKey.TOKEN.value) != null
-            Affiliate.APPFLYER -> url.param(AppsflyerURLParamKey.TOKEN.value) != null
+            Affiliate.APPSFLYER -> url.param(AppsflyerURLParamKey.TOKEN.value) != null
             Affiliate.TAPP -> url.param(TappURLParamKey.TOKEN.value) != null
         }
     }
