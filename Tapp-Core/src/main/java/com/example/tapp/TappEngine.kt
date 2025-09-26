@@ -53,7 +53,7 @@ class TappEngine(val dependencies: Dependencies) {
                 env = config.env,
                 tappToken = config.tappToken,
                 affiliate = config.affiliate,
-                bundleID = "com.nkmhub.dovault.app",
+                bundleID = bundleID,
                 androidId = androidId,
                 hasProcessedReferralEngine = storedConfig.hasProcessedReferralEngine,
                 appToken = storedConfig.appToken,
@@ -65,7 +65,7 @@ class TappEngine(val dependencies: Dependencies) {
                 env = config.env,
                 tappToken = config.tappToken,
                 affiliate = config.affiliate,
-                bundleID = "com.nkmhub.dovault.app",
+                bundleID = bundleID,
                 androidId = androidId,
             )
         }
