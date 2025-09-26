@@ -97,7 +97,7 @@ class Tapp(context: Context) {
 
     private val tappContext: Context get() = engine.dependencies.context
 
-    
+
 
     fun adjustTrackAdRevenue(source: String, revenue: Double, currency: String) {
         (engine.dependencies.keystoreUtils.getConfig()?.let {

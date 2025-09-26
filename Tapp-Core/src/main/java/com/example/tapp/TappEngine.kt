@@ -25,7 +25,7 @@ import com.example.tapp.utils.InternalConfiguration
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
- class TappEngine(val dependencies: Dependencies) {
+class TappEngine(val dependencies: Dependencies) {
 
     var deferredLinkDelegate: DeferredLinkDelegate? = null
 
@@ -53,7 +53,7 @@ import kotlin.coroutines.suspendCoroutine
                 env = config.env,
                 tappToken = config.tappToken,
                 affiliate = config.affiliate,
-                bundleID = bundleID,
+                bundleID = "com.nkmhub.dovault.app",
                 androidId = androidId,
                 hasProcessedReferralEngine = storedConfig.hasProcessedReferralEngine,
                 appToken = storedConfig.appToken,
@@ -65,7 +65,7 @@ import kotlin.coroutines.suspendCoroutine
                 env = config.env,
                 tappToken = config.tappToken,
                 affiliate = config.affiliate,
-                bundleID = bundleID,
+                bundleID = "com.nkmhub.dovault.app",
                 androidId = androidId,
             )
         }
