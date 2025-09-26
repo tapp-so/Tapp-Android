@@ -8,13 +8,15 @@ import java.net.URL
 enum class Affiliate {
     ADJUST,
     APPSFLYER,
+    TAPP_NATIVE,
     TAPP;
 
     fun toIntValue(): Int {
         return when (this) {
             ADJUST -> 1
             APPSFLYER -> 2
-            TAPP -> 3
+            TAPP_NATIVE -> 3
+            TAPP -> 4
         }
     }
 }
@@ -45,6 +47,7 @@ fun Uri.linkToken(affiliate: Affiliate): String? {
     return when (affiliate) {
         Affiliate.ADJUST -> this.param(AdjustURLParamKey.TOKEN.value)
         Affiliate.APPSFLYER -> this.param(AppsflyerURLParamKey.TOKEN.value)
+        Affiliate.TAPP_NATIVE -> this.param(TappURLParamKey.TOKEN.value)
         Affiliate.TAPP -> this.param(TappURLParamKey.TOKEN.value)
     }
 }

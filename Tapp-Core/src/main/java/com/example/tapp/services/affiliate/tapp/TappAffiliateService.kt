@@ -180,6 +180,7 @@ internal class TappAffiliateService(private val dependencies: Dependencies) : Af
             Affiliate.ADJUST -> url.param(AdjustURLParamKey.TOKEN.value) != null
             Affiliate.APPSFLYER -> url.param(AppsflyerURLParamKey.TOKEN.value) != null
             Affiliate.TAPP -> url.param(TappURLParamKey.TOKEN.value) != null
+            Affiliate.TAPP_NATIVE -> url.param(TappURLParamKey.TOKEN.value) != null
         }
     }
 
