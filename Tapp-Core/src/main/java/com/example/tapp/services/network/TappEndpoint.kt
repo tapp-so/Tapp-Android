@@ -14,7 +14,7 @@ internal object TappEndpoint {
 
         return when (environment) {
             Environment.PRODUCTION -> "https://api.tapp.so/v1/ref/"
-            Environment.SANDBOX -> "https://api.nkmhub.com/v1/ref/"
+            Environment.SANDBOX -> "https://api.staging.tapp.so/v1/ref/"
         }
     }
 
@@ -123,10 +123,41 @@ internal object TappEndpoint {
 
         val body = mapOf(
             "tapp_token" to config.tappToken,
-            "bundle_id" to (config.bundleID?:""),
-            "event_name" to eventNameString,
-            "event_url" to (config.deepLinkUrl?:""),
-        ).filterValues { it != null }
+            "bundle_id" to config.bundleID,
+            "event_name" to eventNameString)
+        return RequestModels.Endpoint(url, headers, body)
+    }
+
+    fun getDeferredLink(dependencies: Dependencies, request: RequestModels.DeferredLinkRequest): RequestModels.Endpoint {
+        val config = dependencies.keystoreUtils.getConfig()
+            ?: throw TappError.MissingConfiguration("Configuration is missing")
+
+        val url = "${getBaseUrl(config.env.environmentName())}deferred-link"
+
+        val headers = mapOf(
+            "Authorization" to "Bearer ${config.authToken}",
+            "Content-Type" to "application/json"
+        )
+
+        val body = mapOf(
+            "tapp_token" to config.tappToken,
+            "bundle_id" to (config.bundleID ?: ""),
+            "advertising_id" to request.advertisingId
+            // "os_name" to request.osName,
+            // "os_version" to request.osVersion,
+            // "device_model" to request.deviceModel,
+            // "device_manufacturer" to request.deviceManufacturer,
+            // "screen_resolution" to request.screenResolution,
+            // "screen_density" to request.screenDensity,
+            // "locale" to request.locale,
+            // "timezone" to request.timezone,
+            // "build_fingerprint" to request.buildFingerprint,
+            // "android_id" to request.androidId,
+            // "device_uptime" to request.deviceUptime,
+            // "total_ram" to request.totalRam,
+            // "total_storage" to request.totalStorage,
+            // "carrier_name" to request.carrierName
+        )
 
         return RequestModels.Endpoint(url, headers, body)
     }

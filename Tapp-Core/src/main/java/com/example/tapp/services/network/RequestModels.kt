@@ -181,6 +181,28 @@ class RequestModels {
         val url: String
     )
 
+    data class DeferredLinkRequest(
+        val advertisingId: String
+        // val osName: String,
+        // val osVersion: String,
+        // val deviceModel: String,
+        // val deviceManufacturer: String,
+        // val screenResolution: String,
+        // val screenDensity: String,
+        // val locale: String,
+        // val timezone: String,
+        // val buildFingerprint: String,
+        // val androidId: String,
+        // val deviceUptime: Long,
+        // val totalRam: Long,
+        // val totalStorage: Long,
+        // val carrierName: String
+    )
+
+    data class DeferredLinkResponse(
+        val url: String?
+    )
+
     companion object {
         fun errorTappLinkDataResponse(message: String): TappLinkDataResponse {
             return TappLinkDataResponse(

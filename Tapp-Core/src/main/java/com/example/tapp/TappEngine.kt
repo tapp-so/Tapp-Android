@@ -2,7 +2,6 @@ package com.example.tapp
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.content.Context
 import android.graphics.Color
 import android.net.Uri
 import com.example.tapp.dependencies.Dependencies
