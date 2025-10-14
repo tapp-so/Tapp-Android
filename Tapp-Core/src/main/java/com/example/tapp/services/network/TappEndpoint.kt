@@ -14,7 +14,7 @@ internal object TappEndpoint {
 
         return when (environment) {
             Environment.PRODUCTION -> "https://api.tapp.so/v1/ref/"
-            Environment.SANDBOX -> "https://api.nkmhub.com/v1/ref/"
+            Environment.SANDBOX -> "https://api.staging.tapp.so/v1/ref/"
         }
     }
 
