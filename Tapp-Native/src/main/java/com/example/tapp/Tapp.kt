@@ -5,6 +5,7 @@ import android.content.Context
 import com.example.tapp.dependencies.Dependencies
 import com.example.tapp.services.affiliate.AffiliateServiceFactory
 import com.example.tapp.services.affiliate.native.NativeService
+import com.example.tapp.services.affiliate.tapp.DeferredLinkDelegate
 import com.example.tapp.services.network.NetworkManager
 import com.example.tapp.utils.KeystoreUtils
 import com.example.tapp.utils.Logger
@@ -36,4 +37,21 @@ class Tapp(context: Context) {
                 it, engine.dependencies)
         } as? NativeService)?.dummyNativeMethod()
     }
+
+    fun handleTesListener(test: String) = engine.handleTesListener(test)
+
+    fun simulateTestEvent() {
+        Logger.logInfo("tapp native simulateTestEvent")
+        engine.simulateTestEvent()
+    }
+
+    suspend fun url(influencer: String, adGroup: String?, creative: String?, data: Map<String, String>? = null) =
+        engine.url(influencer, adGroup, creative, data)
+
+    var deferredLinkDelegate: DeferredLinkDelegate?
+        get() = engine.deferredLinkDelegate
+        set(value) {
+            engine.deferredLinkDelegate = value
+        }
+
 }

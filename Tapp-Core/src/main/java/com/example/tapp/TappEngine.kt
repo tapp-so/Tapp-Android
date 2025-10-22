@@ -399,6 +399,7 @@ class TappEngine(val dependencies: Dependencies) {
     }
 
     fun simulateTestEvent() {
+        Logger.logInfo("HEREEEEEEE")
         // Launch a coroutine that waits for 5 seconds before triggering the test event.
         CoroutineScope(Dispatchers.IO).launch {
             kotlinx.coroutines.delay(5000L) // delay of 5 seconds

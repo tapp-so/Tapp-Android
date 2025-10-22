@@ -8,4 +8,5 @@ interface DeferredLinkDelegate {
     fun didFailResolvingUrl(response: RequestModels.FailResolvingUrlResponse)
 
     fun testListener(test: String);
+
 }

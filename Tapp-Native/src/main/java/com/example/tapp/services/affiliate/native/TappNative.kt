@@ -26,20 +26,21 @@ object TappNative {
                 }
 
                 // Step 2: Create the request and call the service.
-                // val displayMetrics = config.context.resources.displayMetrics
-                // val resolution = "${displayMetrics.heightPixels}x${displayMetrics.widthPixels}"
-                // val density = displayMetrics.density.toString()
+                 val displayMetrics = config.context.resources.displayMetrics
+                 val resolution = "${displayMetrics.heightPixels}x${displayMetrics.widthPixels}"
+                 val density = displayMetrics.density.toString()
 
                 val request = RequestModels.DeferredLinkRequest(
-                    advertisingId = advertisingId
-                    // osName = "Android",
-                    // osVersion = android.os.Build.VERSION.RELEASE,
-                    // deviceModel = android.os.Build.MODEL,
-                    // deviceManufacturer = android.os.Build.MANUFACTURER,
-                    // screenResolution = resolution,
-                    // screenDensity = density,
-                    // locale = java.util.Locale.getDefault().toString(),
-                    // timezone = java.util.TimeZone.getDefault().id,
+                    fp=true,
+                    advertisingId = advertisingId,
+                    osName = "Android",
+                    osVersion = android.os.Build.VERSION.RELEASE,
+                    deviceModel = android.os.Build.MODEL,
+                    deviceManufacturer = android.os.Build.MANUFACTURER,
+                    screenResolution = resolution,
+                    screenDensity = density,
+                    locale = java.util.Locale.getDefault().toString(),
+                    timezone = java.util.TimeZone.getDefault().id,
 
                     // // More advanced and stable properties
                     // buildFingerprint = android.os.Build.FINGERPRINT,
@@ -54,9 +55,11 @@ object TappNative {
                 // Step 3: Handle the response.
                 result.fold(
                     onSuccess = { response ->
-                        if (response.url != null) {
+                        Logger.logInfo("response: $response")
+
+                        if (response.deeplink != null) {
                             // Step 4: If a link is found, parse it.
-                            val deepLinkUri = Uri.parse(response.url)
+                            val deepLinkUri = Uri.parse(response.deeplink)
                             Logger.logInfo("Found deferred link: $deepLinkUri")
 
                             // Step 5: Trigger the listener.

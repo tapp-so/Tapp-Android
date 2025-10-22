@@ -7,6 +7,9 @@ import com.example.tapp.services.affiliate.AffiliateService
 import com.example.tapp.utils.Logger
 
 internal class NativeAffiliateService(private val dependencies: Dependencies) : AffiliateService, NativeService {
+
+    private var isTappNativeEnabled: Boolean = false
+
     override fun initialize(): Boolean {
         val context = dependencies.context
         val config = dependencies.keystoreUtils.getConfig()
@@ -23,9 +26,7 @@ internal class NativeAffiliateService(private val dependencies: Dependencies) : 
             // Register deferred deeplink listener.
             nativeConfig.onDeferredDeeplinkResponseListener = OnDeferredDeeplinkResponseListener { deeplink ->
                 handleNativeDeeplink(deeplink)
-                // Returning false means that the deeplink is not consumed here.
-                //TODO:: maybe turn it to true
-                false
+                true
             }
 
             TappNative.init(dependencies, nativeConfig)
@@ -46,11 +47,11 @@ internal class NativeAffiliateService(private val dependencies: Dependencies) : 
     }
 
     override fun setEnabled(enabled: Boolean) {
-        // Set native enabled state
+        isTappNativeEnabled = enabled
     }
 
     override fun isEnabled(): Boolean {
-        return true
+        return isTappNativeEnabled
     }
 
     override fun dummyNativeMethod() {

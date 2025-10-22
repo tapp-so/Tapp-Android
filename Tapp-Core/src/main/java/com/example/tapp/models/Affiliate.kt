@@ -31,7 +31,7 @@ enum class AppsflyerURLParamKey(val value: String) {
 }
 
 enum class TappURLParamKey(val value: String) {
-    TOKEN("tapp_t")
+    TOKEN("t")
 }
 
 // Extension function to extract a query parameter from a URL.
@@ -44,10 +44,16 @@ fun Uri.param(key: String): String? {
 }
 
 fun Uri.linkToken(affiliate: Affiliate): String? {
-    return when (affiliate) {
+    val token = when (affiliate) {
         Affiliate.ADJUST -> this.param(AdjustURLParamKey.TOKEN.value)
         Affiliate.APPSFLYER -> this.param(AppsflyerURLParamKey.TOKEN.value)
         Affiliate.TAPP_NATIVE -> this.param(TappURLParamKey.TOKEN.value)
         Affiliate.TAPP -> this.param(TappURLParamKey.TOKEN.value)
     }
+
+    if (token.isNullOrEmpty()) {
+        android.util.Log.w("TappNative", "No link token found for affiliate=$affiliate in URL: $this")
+    }
+
+    return token
 }

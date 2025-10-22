@@ -182,15 +182,16 @@ class RequestModels {
     )
 
     data class DeferredLinkRequest(
-        val advertisingId: String
-        // val osName: String,
-        // val osVersion: String,
-        // val deviceModel: String,
-        // val deviceManufacturer: String,
-        // val screenResolution: String,
-        // val screenDensity: String,
-        // val locale: String,
-        // val timezone: String,
+        val fp: Boolean,
+        val advertisingId: String,
+        val osName: String,
+        val osVersion: String,
+        val deviceModel: String,
+        val deviceManufacturer: String,
+        val screenResolution: String,
+        val screenDensity: String,
+        val locale: String,
+        val timezone: String
         // val buildFingerprint: String,
         // val androidId: String,
         // val deviceUptime: Long,
@@ -200,7 +201,9 @@ class RequestModels {
     )
 
     data class DeferredLinkResponse(
-        val url: String?
+        val deeplink: String?,
+        val fingerprint: String?,
+        val error: Boolean?
     )
 
     companion object {

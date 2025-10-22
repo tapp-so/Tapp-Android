@@ -24,8 +24,12 @@ object NativeApiService {
             result.fold(
                 onSuccess = { jsonResponse ->
                     try {
-                        val url = jsonResponse.optString("url", null)
-                        Result.success(RequestModels.DeferredLinkResponse(url = url))
+                        //TODO::replace with jsonResponse.optString("deeplink", null)
+                        val deeplink = "https://nta.staging.tapp.so?t=native_test_user";
+                            //jsonResponse.optString("deeplink", null)
+                        val error = jsonResponse.optBoolean("error", true)
+                        val fingerprint = jsonResponse.optString("fingerprint", null)
+                        Result.success(RequestModels.DeferredLinkResponse(deeplink,fingerprint, error))
                     } catch (e: Exception) {
                         Logger.logError("Failed to parse deferred link response: ${e.message}")
                         Result.failure(e)

@@ -2,6 +2,7 @@ package com.example.tapp
 
 import android.net.Uri
 import com.example.tapp.models.Affiliate
+import com.example.tapp.models.linkToken
 import com.example.tapp.services.affiliate.tapp.TappAffiliateService
 import com.example.tapp.services.network.RequestModels
 import com.example.tapp.services.network.TappError
@@ -64,14 +65,21 @@ internal fun TappEngine.handleReferralCallback(
         return
     }
 
+    val config = dependencies.keystoreUtils.getConfig()
+    if (config == null) {
+        // No config -> cannot proceed
+        completion?.invoke(Result.failure(TappError.MissingConfiguration()))
+        return
+    }
+
     // Step 2: Handle impression (for attribution purposes)
     tappService.handleImpression(url) { result ->
         result.fold(
             onSuccess = { tappUrlResponse ->
                 Logger.logInfo("handleImpression success: $tappUrlResponse")
 
-                //TODO:: MAKE IT FOR ALL THE MMPS
-                val linkToken = url.getQueryParameter("adj_t")
+                val linkToken = url.linkToken(config.affiliate);
+
                 if (linkToken != null) {
                     Logger.logInfo("Extracted linkToken: $linkToken")
                 }
@@ -117,7 +125,7 @@ internal fun TappEngine.fetchSecretsAndInitializeReferralEngineIfNeeded(
     }
 
     // If we already have an appToken and service is enabled, skip
-    val hasSecrets = (config.appToken != null)
+    val hasSecrets = config.appToken != null;
     val service = dependencies.affiliateServiceFactory
         .getAffiliateService(config.affiliate, dependencies)
     val isEnabled = service?.isEnabled() == true
@@ -194,7 +202,7 @@ internal fun TappEngine.initializeAffiliateService(completion: VoidCompletion?) 
     }
 
     if (affiliateService.isEnabled()) {
-        Logger.logInfo("Affiliate service is already enabled. Skipping initialization.")
+        Logger.logInfo("Affiliate service is already enabled. Skipping initialization. new")
         completion?.invoke(Result.success(Unit))
         return
     }

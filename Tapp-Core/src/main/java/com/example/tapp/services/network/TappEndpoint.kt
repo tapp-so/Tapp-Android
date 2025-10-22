@@ -132,7 +132,7 @@ internal object TappEndpoint {
         val config = dependencies.keystoreUtils.getConfig()
             ?: throw TappError.MissingConfiguration("Configuration is missing")
 
-        val url = "${getBaseUrl(config.env.environmentName())}deferred-link"
+        val url = "${getBaseUrl(config.env.environmentName())}fingerprint"
 
         val headers = mapOf(
             "Authorization" to "Bearer ${config.authToken}",
@@ -142,15 +142,16 @@ internal object TappEndpoint {
         val body = mapOf(
             "tapp_token" to config.tappToken,
             "bundle_id" to (config.bundleID ?: ""),
-            "advertising_id" to request.advertisingId
-            // "os_name" to request.osName,
-            // "os_version" to request.osVersion,
-            // "device_model" to request.deviceModel,
-            // "device_manufacturer" to request.deviceManufacturer,
-            // "screen_resolution" to request.screenResolution,
-            // "screen_density" to request.screenDensity,
-            // "locale" to request.locale,
-            // "timezone" to request.timezone,
+            "advertising_id" to request.advertisingId,
+            "fp" to request.fp,
+            "os_name" to request.osName,
+            "os_version" to request.osVersion,
+            "device_model" to request.deviceModel,
+            "device_manufacturer" to request.deviceManufacturer,
+            "screen_resolution" to request.screenResolution,
+            "screen_density" to request.screenDensity,
+            "locale" to request.locale,
+            "timezone" to request.timezone,
             // "build_fingerprint" to request.buildFingerprint,
             // "android_id" to request.androidId,
             // "device_uptime" to request.deviceUptime,
