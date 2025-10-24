@@ -191,13 +191,19 @@ class RequestModels {
         val screenResolution: String,
         val screenDensity: String,
         val locale: String,
-        val timezone: String
-        // val buildFingerprint: String,
-        // val androidId: String,
+        val timezone: String,
         // val deviceUptime: Long,
         // val totalRam: Long,
         // val totalStorage: Long,
         // val carrierName: String
+        val installReferrer: String? = null,
+        val clickId: String? = null,
+        val androidId: String? = null,
+        val batteryLevel: Int?,
+        val totalRamBytes: Long? = null,
+        val totalStorageBytes: Long? = null,
+        val availStorageBytes: Long? = null,
+        val deviceUptimeMs: Long? = null
     )
 
     data class DeferredLinkResponse(

@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.example.tapp.services.affiliate.tapp.DeferredLinkDelegate
 import com.example.tapp.services.network.RequestModels
+import com.example.tapp.services.network.RequestModels.EventAction
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), DeferredLinkDelegate {
@@ -36,6 +37,12 @@ class MainActivity : AppCompatActivity(), DeferredLinkDelegate {
          dummyButton.setOnClickListener {
              MainApplication.tapp.dummyMethod()
          }
+
+        val tappEventConfig = RequestModels.TappEvent(eventName = EventAction.tapp_click_button)
+        val tappEvent: Button = findViewById(R.id.tappEvent)
+        tappEvent.setOnClickListener {
+            MainApplication.tapp.handleTappEvent(tappEventConfig)
+        }
 
         val usernameEditText: EditText = findViewById(R.id.usernameEditText)
         val generateUrlButton: Button = findViewById(R.id.generateUrlButton)

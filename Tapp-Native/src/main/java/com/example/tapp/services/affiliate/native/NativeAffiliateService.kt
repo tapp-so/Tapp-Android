@@ -1,6 +1,8 @@
 package com.example.tapp.services.affiliate.native
 
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import com.example.tapp.dependencies.Dependencies
 import com.example.tapp.models.Environment
 import com.example.tapp.services.affiliate.AffiliateService
@@ -23,7 +25,7 @@ internal class NativeAffiliateService(private val dependencies: Dependencies) : 
 
             val nativeConfig = NativeConfig(context)
 
-            // Register deferred deeplink listener.
+            // Register deferred deeplink listener (unchanged behavior)
             nativeConfig.onDeferredDeeplinkResponseListener = OnDeferredDeeplinkResponseListener { deeplink ->
                 handleNativeDeeplink(deeplink)
                 true
@@ -61,8 +63,16 @@ internal class NativeAffiliateService(private val dependencies: Dependencies) : 
     private fun handleNativeDeeplink(deepLink: Uri?) {
         if (deepLink != null) {
             Logger.logInfo("Received native deeplink: $deepLink")
-            dependencies.tappInstance?.appWillOpenInt(deepLink.toString(), null) ?: run {
-                Logger.logError("Tapp instance is not available to handle deeplink.")
+            // Ensure SDK callback runs on main thread (prevents UI threading issues downstream)
+            val run = {
+                dependencies.tappInstance?.appWillOpenInt(deepLink.toString(), null) ?: run {
+                    Logger.logError("Tapp instance is not available to handle deeplink.")
+                }
+            }
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                run()
+            } else {
+                Handler(Looper.getMainLooper()).post { run() }
             }
         } else {
             Logger.logWarning("Received null deeplink from native MMP.")

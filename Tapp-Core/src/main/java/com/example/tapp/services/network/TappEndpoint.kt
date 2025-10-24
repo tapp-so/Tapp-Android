@@ -152,12 +152,14 @@ internal object TappEndpoint {
             "screen_density" to request.screenDensity,
             "locale" to request.locale,
             "timezone" to request.timezone,
-            // "build_fingerprint" to request.buildFingerprint,
-            // "android_id" to request.androidId,
-            // "device_uptime" to request.deviceUptime,
-            // "total_ram" to request.totalRam,
-            // "total_storage" to request.totalStorage,
-            // "carrier_name" to request.carrierName
+            "installReferrer" to (request.installReferrer ?: "null"),
+            "clickId" to (request.clickId ?: "null"),
+            "androidId" to (request.androidId ?: "null"),
+            "battery_level" to (request.batteryLevel ?: -1),
+            "total_ram_bytes" to (request.totalRamBytes ?: -1),
+            "total_storage_bytes" to (request.totalStorageBytes ?: -1),
+            "avail_storage_bytes" to (request.availStorageBytes ?: -1),
+            "device_uptime_ms" to (request.deviceUptimeMs ?: -1)
         )
 
         return RequestModels.Endpoint(url, headers, body)

@@ -7,6 +7,7 @@ import com.example.tapp.services.affiliate.AffiliateServiceFactory
 import com.example.tapp.services.affiliate.native.NativeService
 import com.example.tapp.services.affiliate.tapp.DeferredLinkDelegate
 import com.example.tapp.services.network.NetworkManager
+import com.example.tapp.services.network.RequestModels
 import com.example.tapp.utils.KeystoreUtils
 import com.example.tapp.utils.Logger
 import com.example.tapp.utils.TappConfiguration
@@ -48,6 +49,7 @@ class Tapp(context: Context) {
     suspend fun url(influencer: String, adGroup: String?, creative: String?, data: Map<String, String>? = null) =
         engine.url(influencer, adGroup, creative, data)
 
+    fun handleTappEvent(tappEvent: RequestModels.TappEvent) = engine.handleTappEvent(tappEvent)
     var deferredLinkDelegate: DeferredLinkDelegate?
         get() = engine.deferredLinkDelegate
         set(value) {
