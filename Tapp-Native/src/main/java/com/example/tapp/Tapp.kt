@@ -32,6 +32,11 @@ class Tapp(context: Context) {
 
     fun start(config: TappConfiguration) = engine.start(config)
 
+    fun shouldProcess(url: String?): Boolean = engine.shouldProcess(url)
+
+    suspend fun fetchLinkData(url: String) = engine.fetchLinkData(url)
+
+    suspend fun fetchOriginalLinkData() = engine.fetchOriginalLinkData()
     fun dummyMethod() {
         (engine.dependencies.keystoreUtils.getConfig()?.affiliate?.let {
             engine.dependencies.affiliateServiceFactory.getAffiliateService(
