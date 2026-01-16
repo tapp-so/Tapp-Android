@@ -6,7 +6,6 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -91,7 +90,7 @@ class KeystoreUtils(context: Context) {
 
         return try {
             val decryptedConfig = decrypt(encryptedConfig)
-            json.decodeFromString<InternalConfiguration>(decryptedConfig)
+            json.decodeFromString(InternalConfiguration.serializer(), decryptedConfig)
         } catch (e: Exception) {
             Logger.logError("Failed to decrypt configuration: ${e.localizedMessage}")
             null

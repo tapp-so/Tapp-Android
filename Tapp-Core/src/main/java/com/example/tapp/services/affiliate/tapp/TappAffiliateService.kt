@@ -1,6 +1,7 @@
 package com.example.tapp.services.affiliate.tapp
 
 import android.net.Uri
+import androidx.core.net.toUri
 import com.example.tapp.dependencies.Dependencies
 import com.example.tapp.models.AdjustURLParamKey
 import com.example.tapp.models.Affiliate
@@ -216,7 +217,8 @@ internal class TappAffiliateService(private val dependencies: Dependencies) : Af
                         attrTappUrl = jsonResponse.optString("attr_tapp_url", "attr_tapp_url didn't returned"),
                         influencer = jsonResponse.optString("influencer", "influencer didn't returned"),
                         data = dataMap,
-                        isFirstSession = finalIsFirstSession
+                        isFirstSession = finalIsFirstSession,
+                        deepLink = jsonResponse.optString("deepLink", "deepLink didn't returned")
                     )
                 },
                 onFailure = { exception ->

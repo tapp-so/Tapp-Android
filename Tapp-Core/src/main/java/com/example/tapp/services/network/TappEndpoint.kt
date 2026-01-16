@@ -123,10 +123,47 @@ internal object TappEndpoint {
 
         val body = mapOf(
             "tapp_token" to config.tappToken,
-            "bundle_id" to (config.bundleID?:""),
+            "bundle_id" to config.bundleID,
             "event_name" to eventNameString,
             "event_url" to (config.deepLinkUrl?:""),
-        ).filterValues { it != null }
+            "linkToken" to (config.linkToken?:""))
+        return RequestModels.Endpoint(url, headers, body)
+    }
+
+    fun getDeferredLink(dependencies: Dependencies, request: RequestModels.DeferredLinkRequest): RequestModels.Endpoint {
+        val config = dependencies.keystoreUtils.getConfig()
+            ?: throw TappError.MissingConfiguration("Configuration is missing")
+
+        val url = "${getBaseUrl(config.env.environmentName())}fingerprint"
+
+        val headers = mapOf(
+            "Authorization" to "Bearer ${config.authToken}",
+            "Content-Type" to "application/json"
+        )
+
+        val body = mapOf(
+            "tapp_token" to config.tappToken,
+            "bundle_id" to config.bundleID,
+            "advertising_id" to request.advertisingId,
+            "fp" to request.fp,
+            "platform" to request.platform,
+            "os_version" to request.osVersion,
+            "device_model" to request.deviceModel,
+            "device_manufacturer" to request.deviceManufacturer,
+            "screen_resolution" to request.screenResolution,
+            "screen_density" to request.screenDensity,
+            "locale" to request.locale,
+            "timezone" to request.timezone,
+            "referrer" to (request.installReferrer ?: "null"),
+            "clickId" to (request.clickId ?: "null"),
+            "device_id" to (request.androidId ?: "null"),
+            "battery_level" to (request.batteryLevel ?: -1),
+            "isCharging" to (request.isCharging ?: "null"),
+            "total_ram_bytes" to (request.totalRamBytes ?: -1),
+            "total_storage_bytes" to (request.totalStorageBytes ?: -1),
+            "avail_storage_bytes" to (request.availStorageBytes ?: -1),
+            "device_uptime_ms" to (request.deviceUptimeMs ?: -1)
+        )
 
         return RequestModels.Endpoint(url, headers, body)
     }
