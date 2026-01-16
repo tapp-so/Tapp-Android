@@ -6,6 +6,7 @@ import android.os.Looper
 import com.example.tapp.dependencies.Dependencies
 import com.example.tapp.models.Environment
 import com.example.tapp.services.affiliate.AffiliateService
+import com.example.tapp.services.network.RequestModels
 import com.example.tapp.utils.Logger
 
 internal class NativeAffiliateService(private val dependencies: Dependencies) : AffiliateService, NativeService {
@@ -20,14 +21,24 @@ internal class NativeAffiliateService(private val dependencies: Dependencies) : 
             return false
         }
 
+        if(config.hasProcessedReferralEngine){
+            Logger.logInfo("Already initialized")
+            return true
+        }
+
         return try {
             Logger.logInfo("Handling initialize Native")
 
             val nativeConfig = NativeConfig(context)
 
             // Register deferred deeplink listener (unchanged behavior)
-            nativeConfig.onDeferredDeeplinkResponseListener = OnDeferredDeeplinkResponseListener { deeplink ->
-                handleNativeDeeplink(deeplink)
+            nativeConfig.onDeferredDeeplinkResponseListener = OnDeferredDeeplinkResponseListener { deferredLinkResponse ->
+                if(deferredLinkResponse?.error == false || deferredLinkResponse?.error == null ){
+                    handleDeferredLinkResponse(deferredLinkResponse)
+                }else{
+                    Logger.logWarning("Fingerprint isn't matched")
+                    handleFailedLinkProcessing()
+                }
                 true
             }
 
@@ -49,6 +60,7 @@ internal class NativeAffiliateService(private val dependencies: Dependencies) : 
     }
 
     override fun setEnabled(enabled: Boolean) {
+        Logger.logInfo("Enable Native service$enabled")
         isTappNativeEnabled = enabled
     }
 
@@ -60,13 +72,13 @@ internal class NativeAffiliateService(private val dependencies: Dependencies) : 
         Logger.logInfo("Dummy native method called")
     }
 
-    private fun handleNativeDeeplink(deepLink: Uri?) {
-        if (deepLink != null) {
-            Logger.logInfo("Received native deeplink: $deepLink")
+    private fun handleDeferredLinkResponse(deferredLinkResponse: RequestModels.DeferredLinkResponse?) {
+        if (deferredLinkResponse?.deeplink != null) {
+            Logger.logInfo("Received native DeferredLinkResponse: ${deferredLinkResponse.deeplink}")
             // Ensure SDK callback runs on main thread (prevents UI threading issues downstream)
             val run = {
-                dependencies.tappInstance?.appWillOpenInt(deepLink.toString(), null) ?: run {
-                    Logger.logError("Tapp instance is not available to handle deeplink.")
+                dependencies.tappInstance?.appWillOpenIntNative(deferredLinkResponse, null) ?: run {
+                    Logger.logError("Tapp instance is not available to handle DeferredLinkResponse.")
                 }
             }
             if (Looper.myLooper() == Looper.getMainLooper()) {
@@ -75,7 +87,14 @@ internal class NativeAffiliateService(private val dependencies: Dependencies) : 
                 Handler(Looper.getMainLooper()).post { run() }
             }
         } else {
-            Logger.logWarning("Received null deeplink from native MMP.")
+            Logger.logWarning("Received null tappUrl DeferredLinkResponse from native MMP.")
+        }
+    }
+
+    private fun handleFailedLinkProcessing(){
+        Logger.logWarning("URL is not processable")
+        dependencies.tappInstance?.appWillNotProcess() ?: run {
+            Logger.logError("Tapp instance is not available to handle DeferredLinkResponse.")
         }
     }
 }

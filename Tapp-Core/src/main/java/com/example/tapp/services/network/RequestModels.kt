@@ -156,7 +156,8 @@ class RequestModels {
         val attrTappUrl:String?,
         val influencer:String?,
         val data: Map<String, String>?,
-        val isFirstSession: Boolean?
+        val isFirstSession: Boolean?,
+        val deepLink: String?
     )
 
     data class ExternalConfig(
@@ -184,7 +185,7 @@ class RequestModels {
     data class DeferredLinkRequest(
         val fp: Boolean,
         val advertisingId: String,
-        val osName: String,
+        val platform: String,
         val osVersion: String,
         val deviceModel: String,
         val deviceManufacturer: String,
@@ -192,14 +193,11 @@ class RequestModels {
         val screenDensity: String,
         val locale: String,
         val timezone: String,
-        // val deviceUptime: Long,
-        // val totalRam: Long,
-        // val totalStorage: Long,
-        // val carrierName: String
         val installReferrer: String? = null,
         val clickId: String? = null,
         val androidId: String? = null,
         val batteryLevel: Int?,
+        val isCharging: Boolean? = null,
         val totalRamBytes: Long? = null,
         val totalStorageBytes: Long? = null,
         val availStorageBytes: Long? = null,
@@ -209,7 +207,11 @@ class RequestModels {
     data class DeferredLinkResponse(
         val deeplink: String?,
         val fingerprint: String?,
-        val error: Boolean?
+        val error: Boolean?,
+        val tappUrl:String?,
+        val attrTappUrl:String?,
+        val influencer:String?,
+        val data: Map<String, String>?,
     )
 
     companion object {
@@ -221,7 +223,8 @@ class RequestModels {
                 attrTappUrl = null,
                 influencer = null,
                 data = null,
-                isFirstSession = false
+                isFirstSession = false,
+                deepLink = null
             )
         }
     }

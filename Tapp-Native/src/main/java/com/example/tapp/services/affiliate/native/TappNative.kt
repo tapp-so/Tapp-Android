@@ -1,6 +1,7 @@
 package com.example.tapp.services.affiliate.native
 
 import android.annotation.SuppressLint
+import android.content.res.Resources
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -67,6 +68,8 @@ object TappNative {
                 }
 
                 val batteryLevel = getBatteryLevelPercent(config.context)
+                val isCharging = getBatteryStatus(config.context)
+
                 val totalRamBytes = getTotalRamBytes(config.context)
                 val (totalStorageBytes, availStorageBytes) = getInternalStorageBytes();
                 // milliseconds since boot including deep sleep
@@ -75,7 +78,7 @@ object TappNative {
                 // human-friendly seconds (for logs / backend)
                 val deviceUptimeSeconds: Long = deviceUptimeMs / 1000L
                 // ---- C) Build the DeferredLinkRequest
-                val dm = config.context.resources.displayMetrics
+                val dm = Resources.getSystem().displayMetrics
                 val resolution = "${dm.widthPixels}x${dm.heightPixels}"
                 val density = dm.density.toString()
                 val locale = java.util.Locale.getDefault().toString()
@@ -91,7 +94,7 @@ object TappNative {
                 val request = RequestModels.DeferredLinkRequest(
                     fp = true,
                     advertisingId = advertisingId,
-                    osName = "Android",
+                    platform = "Android",
                     osVersion = android.os.Build.VERSION.RELEASE,
                     deviceModel = android.os.Build.MODEL,
                     deviceManufacturer = android.os.Build.MANUFACTURER,
@@ -103,6 +106,7 @@ object TappNative {
                     clickId = clickIdForPayload,
                     androidId = androidId,
                     batteryLevel = batteryLevel,
+                    isCharging = isCharging ,
                     totalRamBytes = totalRamBytes,
                     totalStorageBytes = totalStorageBytes,
                     availStorageBytes = availStorageBytes,
@@ -118,26 +122,31 @@ object TappNative {
                 )
 
                 // ---- D) Call your backend
-                suspend fun callOnce(): Uri? = withTimeoutOrNull(4000L) {
+                suspend fun callOnce(): RequestModels.DeferredLinkResponse? = withTimeoutOrNull(4000L) {
                     Logger.logInfo("Calling backend for deferred link resolution…")
                     val result = NativeApiService.fetchDeferredLink(dependencies, request)
-                    result.getOrNull()?.deeplink?.let {
-                        Logger.logInfo("Backend returned deeplink: $it")
-                        Uri.parse(it)
+                    val resp = result.getOrNull()
+                    if (resp != null) {
+                        val chosenUrl = resp.tappUrl ?: resp.deeplink
+                        Logger.logInfo("Backend returned: tappUrl=${resp.tappUrl}, deeplink=${resp.deeplink}, chosen=${chosenUrl}")
+                    } else {
+                        Logger.logWarning("Backend returned null (Result.getOrNull() == null)")
                     }
+                    resp
                 }
 
-                val deepLinkUri = callOnce() ?: run {
+                val response = callOnce() ?: run {
                     Logger.logWarning("First backend call returned null, retrying once after 200ms...")
                     delay(200L)
                     callOnce()
                 }
 
-                // ---- E) Notify listener
-                if (deepLinkUri != null) {
-                    Logger.logInfo("✅ Deferred link resolved: $deepLinkUri")
+                // ---- E) Notify listener with the FULL response object
+                if (response != null) {
+                    Logger.logInfo("✅ Deferred link resolved (object): $response")
                     dispatchToMain {
-                        config.onDeferredDeeplinkResponseListener?.onDeferredDeeplinkResponse(deepLinkUri)
+                        // Listener now expects DeferredLinkResponse?
+                        config.onDeferredDeeplinkResponseListener?.onDeferredDeeplinkResponse(response)
                     }
                 } else {
                     Logger.logInfo("No deferred link found for this user (response was null).")
@@ -170,6 +179,33 @@ object TappNative {
         } catch (_: Exception) { null }
     }
 
+    private fun getBatteryStatus(context: android.content.Context): Boolean? {
+        return try {
+            // Prefer BatteryManager (no permission needed)
+            val bm = context.getSystemService(android.content.Context.BATTERY_SERVICE) as? android.os.BatteryManager
+            val status = bm?.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_STATUS)
+
+            // Some vendors don't fill that property, so fallback to broadcast
+            val charging = when (status) {
+                android.os.BatteryManager.BATTERY_STATUS_CHARGING,
+                android.os.BatteryManager.BATTERY_STATUS_FULL -> true
+                android.os.BatteryManager.BATTERY_STATUS_DISCHARGING,
+                android.os.BatteryManager.BATTERY_STATUS_NOT_CHARGING -> false
+                else -> {
+                    val ifilter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+                    val intent = context.registerReceiver(null, ifilter)
+                    val state = intent?.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1)
+                    state == android.os.BatteryManager.BATTERY_STATUS_CHARGING ||
+                            state == android.os.BatteryManager.BATTERY_STATUS_FULL
+                }
+            }
+            charging
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+
     private fun getTotalRamBytes(context: android.content.Context): Long? {
         return try {
             val am = context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
@@ -193,57 +229,90 @@ object TappNative {
      * Safely reads the Play Install Referrer once.
      * Returns Pair(rawReferrerString, clickId) or (null, null).
      */
-    private suspend fun getInstallReferrerSafe(config: NativeConfig): Pair<String?, String?> =
-        suspendCancellableCoroutine { cont ->
-            try {
-                val client = InstallReferrerClient.newBuilder(config.context).build()
-                Logger.logInfo("Connecting to Install Referrer service…")
+    private suspend fun getInstallReferrerSafe(
+        config: NativeConfig,
+        timeoutMs: Long = 2_500L
+    ): Pair<String?, String?> {
+        // Timeout is important because on some devices/Play Services states,
+        // onInstallReferrerSetupFinished() may never be called and the coroutine would hang forever.
+        val result = withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine<Pair<String?, String?>> { cont ->
+                try {
+                    val client = InstallReferrerClient.newBuilder(config.context).build()
+                    Logger.logInfo("Connecting to Install Referrer service…")
 
-                cont.invokeOnCancellation { runCatching { client.endConnection() } }
+                    cont.invokeOnCancellation { runCatching { client.endConnection() } }
 
-                client.startConnection(object : InstallReferrerStateListener {
-                    override fun onInstallReferrerSetupFinished(code: Int) {
-                        try {
-                            when (code) {
-                                InstallReferrerClient.InstallReferrerResponse.OK -> {
-                                    val resp = client.installReferrer
-                                    val raw = resp.installReferrer
-                                    Logger.logInfo("Install Referrer response received: $raw")
-                                    val parsed = Uri.parse("app://dummy?$raw")
-                                    val clickId = parsed.getQueryParameter("click_id")
-                                    Logger.logInfo("Parsed click_id from referrer: ${clickId ?: "none"}")
-                                    cont.resume(Pair(raw, clickId))
+                    client.startConnection(object : InstallReferrerStateListener {
+                        override fun onInstallReferrerSetupFinished(code: Int) {
+                            try {
+                                when (code) {
+                                    InstallReferrerClient.InstallReferrerResponse.OK -> {
+                                        val resp = client.installReferrer
+
+                                        // ✅ PRODUCTION: use Play Store value
+                                        val raw = resp.installReferrer
+
+                                        // 🧪 TESTING (local override):
+                                        // Use this when you want to simulate a known referrer payload without reinstalling:
+                                        // val raw = "utm_source=tapp&utm_medium=app&click_id=UJQd1qQL&fpid=9544b14f-a1eb-4d02-a0cd-50565c91a83d"
+                                        //
+                                        // Example Play redirect that produces the above raw (after Play decoding):
+                                        // https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_source%3Dtapp%26utm_medium%3Dapp%26click_id%3DUJQd1qQL%26fpid%3D9544b14f-a1eb-4d02-a0cd-50565c91a83d
+
+                                        Logger.logInfo("Install Referrer response received: ${raw ?: "<null>"}")
+
+                                        val clickId = raw
+                                            ?.takeIf { it.isNotBlank() }
+                                            ?.let {
+                                                val parsed = Uri.parse("app://dummy?$it")
+                                                parsed.getQueryParameter("click_id")
+                                            }
+
+                                        Logger.logInfo("Parsed click_id from referrer: ${clickId ?: "none"}")
+                                        cont.resume(Pair(raw, clickId))
+                                    }
+
+                                    InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED -> {
+                                        Logger.logWarning("Install Referrer not supported on this device.")
+                                        cont.resume(Pair(null, null))
+                                    }
+
+                                    InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE -> {
+                                        Logger.logWarning("Install Referrer service unavailable.")
+                                        cont.resume(Pair(null, null))
+                                    }
+
+                                    else -> {
+                                        Logger.logWarning("Install Referrer returned unknown code: $code")
+                                        cont.resume(Pair(null, null))
+                                    }
                                 }
-                                InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED -> {
-                                    Logger.logWarning("Install Referrer not supported on this device.")
-                                    cont.resume(Pair(null, null))
-                                }
-                                InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE -> {
-                                    Logger.logWarning("Install Referrer service unavailable.")
-                                    cont.resume(Pair(null, null))
-                                }
-                                else -> {
-                                    Logger.logWarning("Install Referrer returned unknown code: $code")
-                                    cont.resume(Pair(null, null))
-                                }
+                            } catch (e: Exception) {
+                                Logger.logError("Error parsing Install Referrer: ${e.message}")
+                                cont.resume(Pair(null, null))
+                            } finally {
+                                runCatching { client.endConnection() }
                             }
-                        } catch (e: Exception) {
-                            Logger.logError("Error parsing Install Referrer: ${e.message}")
-                            cont.resume(Pair(null, null))
-                        } finally {
-                            runCatching { client.endConnection() }
                         }
-                    }
 
-                    override fun onInstallReferrerServiceDisconnected() {
-                        Logger.logWarning("Install Referrer service disconnected.")
-                        // Don't resume here; we'll have already resumed above or hit timeout.
-                    }
-                })
-            } catch (e: Exception) {
-                Logger.logError("Failed to initialize Install Referrer client: ${e.message}")
-                cont.resume(Pair(null, null))
+                        override fun onInstallReferrerServiceDisconnected() {
+                            Logger.logWarning("Install Referrer service disconnected.")
+                            // Don't resume here; onInstallReferrerSetupFinished usually handles resume.
+                        }
+                    })
+                } catch (e: Exception) {
+                    Logger.logError("Failed to initialize Install Referrer client: ${e.message}")
+                    cont.resume(Pair(null, null))
+                }
             }
         }
 
+        if (result == null) {
+            Logger.logWarning("Install Referrer timed out after ${timeoutMs}ms")
+            return Pair(null, null)
+        }
+
+        return result
+    }
 }

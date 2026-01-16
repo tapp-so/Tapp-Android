@@ -23,6 +23,8 @@ import com.example.tapp.services.affiliate.tapp.DeferredLinkDelegate
 import com.example.tapp.utils.InternalConfiguration
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import androidx.core.net.toUri
+import com.example.tapp.models.Environment
 
 class TappEngine(val dependencies: Dependencies) {
 
@@ -116,13 +118,51 @@ class TappEngine(val dependencies: Dependencies) {
         }
 
         if (!shouldProcess(url)) {
-            Logger.logInfo("URL is not processable. Skipping processing.")
+            Logger.logInfo("URL is not processable. Skipping processing.$url")
             completion?.invoke(Result.success(Unit))
             return
         }
 
         // Step 3: Continue to the next logic
         appWillOpen(parsedUri, completion)
+    }
+
+    fun appWillOpenIntNative(deferredLinkResponse: RequestModels.DeferredLinkResponse, completion: VoidCompletion?) {
+        Logger.logInfo("AppWillOpenInt start running")
+        if (deferredLinkResponse.deeplink.isNullOrEmpty()) {
+            Logger.logInfo("No URL provided. Skipping appWillOpen processing.")
+            completion?.invoke(Result.success(Unit))
+            return
+        }
+
+        // Step 1: Check if the referral engine is already processed
+        if (hasProcessedReferralEngine()) {
+            Logger.logInfo("Referral engine already processed. Returning early.")
+            completion?.invoke(Result.success(Unit)) // Optionally signal success without processing
+            return
+        }
+
+        val parsedUri = deferredLinkResponse.deeplink.toUri()
+        // Step 2: Get the configuration
+        val config = dependencies.keystoreUtils.getConfig()
+        if (config == null) {
+            completion?.invoke(Result.failure(TappError.MissingConfiguration()))
+            return
+        }
+
+        if (!shouldProcess(deferredLinkResponse.deeplink)) {
+            Logger.logInfo("URL is not processable. Skipping processing.${deferredLinkResponse.deeplink} ")
+            completion?.invoke(Result.success(Unit))
+            return
+        }
+
+        // Step 3: Continue to the next logic
+        appWillOpenNative(deferredLinkResponse, completion)
+    }
+
+    fun appWillNotProcess() {
+        Logger.logInfo("AppWillNotProcess start running")
+        appWillNotProcessNative()
     }
 
     fun appWillOpen(url: String?, completion: VoidCompletion?) {

@@ -11,6 +11,7 @@ import com.example.tapp.services.affiliate.tapp.DeferredLinkDelegate
 import com.example.tapp.services.network.RequestModels
 import com.example.tapp.services.network.RequestModels.EventAction
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 class MainActivity : AppCompatActivity(), DeferredLinkDelegate {
 //class MainActivity : AppCompatActivity() {
@@ -73,7 +74,7 @@ class MainActivity : AppCompatActivity(), DeferredLinkDelegate {
         runOnUiThread {
             AlertDialog.Builder(this)
                 .setTitle("Differed deep link received")
-                .setMessage(response.tappUrl)
+                .setMessage(response.toString())
                 .setPositiveButton("OK", null)
                 .show()
         }

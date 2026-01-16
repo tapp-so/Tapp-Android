@@ -1,6 +1,7 @@
 package com.example.tapp
 
 import android.net.Uri
+import androidx.core.net.toUri
 import com.example.tapp.models.Affiliate
 import com.example.tapp.models.linkToken
 import com.example.tapp.services.affiliate.tapp.TappAffiliateService
@@ -52,6 +53,46 @@ internal fun TappEngine.appWillOpen(url: Uri, completion: VoidCompletion?) {
     }
 }
 
+internal fun TappEngine.appWillOpenNative(deferredLinkResponse: RequestModels.DeferredLinkResponse, completion: VoidCompletion?) {
+    val config = dependencies.keystoreUtils.getConfig()
+    if (config == null) {
+        // No config -> cannot proceed
+        completion?.invoke(Result.failure(TappError.MissingConfiguration()))
+        return
+    }
+
+    // Check if we already have secrets and the service is enabled
+    val service = dependencies.affiliateServiceFactory
+        .getAffiliateService(config.affiliate, dependencies)
+
+    val hasSecrets = config.appToken != null
+    val isServiceEnabled = service?.isEnabled() == true
+
+    // If we ALREADY have secrets + the service is enabled,
+    // skip re-fetching secrets or re-initializing,
+    // and go straight to handleReferralCallback:
+    if (hasSecrets && isServiceEnabled) {
+        handleReferralCallbackNative(deferredLinkResponse, completion)
+        return
+    }
+
+    // Otherwise, secrets or init are still needed:
+    fetchSecretsAndInitializeReferralEngineIfNeeded { result ->
+        result.fold(
+            onSuccess = {
+                // Now that secrets & init are done, handle the callback
+                handleReferralCallbackNative(deferredLinkResponse, completion)
+            },
+            onFailure = { error ->
+                completion?.invoke(Result.failure(error))
+            }
+        )
+    }
+}
+
+internal fun TappEngine.appWillNotProcessNative(){
+    setProcessedReferralEngine()
+}
 
 internal fun TappEngine.handleReferralCallback(
     url: Uri,
@@ -113,6 +154,114 @@ internal fun TappEngine.handleReferralCallback(
             }
         )
     }
+}
+
+internal fun TappEngine.handleReferralCallbackNative(
+    deferredLinkResponse: RequestModels.DeferredLinkResponse,
+    completion: VoidCompletion?
+) {
+    // 1) Resolve Tapp service
+    val tappService = dependencies.affiliateServiceFactory
+        .getAffiliateService(Affiliate.TAPP, dependencies)
+    if (tappService !is TappAffiliateService) {
+        completion?.invoke(Result.failure(TappError.MissingAffiliateService("Affiliate service not available for tappService")))
+        return
+    }
+
+    // 2) Require config
+    val config = dependencies.keystoreUtils.getConfig()
+    if (config == null) {
+        completion?.invoke(Result.failure(TappError.MissingConfiguration()))
+        return
+    }
+
+    // 3) Pick URL from response (prefer tappUrl, fallback to deeplink)
+    val urlString = deferredLinkResponse.deeplink ?: deferredLinkResponse.tappUrl
+    val url: Uri = try {
+        val value = urlString?.toUri()
+        if (value == null) {
+            completion?.invoke(
+                Result.failure(
+                    TappError.InitializationFailed("Missing tappUrl/deeplink in DeferredLinkResponse")
+                )
+            )
+            return
+        }
+        value
+    } catch (e: Exception) {
+        // Mirror the old failure path side-effects
+        dependencies.tappInstance?.deferredLinkDelegate?.didFailResolvingUrl(
+            response = RequestModels.FailResolvingUrlResponse(
+                error = "Couldn't parse deeplink (${e.message})",
+                url = urlString ?: ""
+            )
+        )
+        completion?.invoke(
+            Result.failure(
+                TappError.InitializationFailed("Invalid deeplink format: ${e.message}")
+            )
+        )
+        return
+    }
+
+    //check the
+    val response = RequestModels.TappLinkDataResponse(
+        error = deferredLinkResponse.error == true,
+        message = if (deferredLinkResponse.error == true)
+            "Something went wrong on deferred deep link"
+        else
+            "Success on deferred deep link",
+        tappUrl = deferredLinkResponse.tappUrl,
+        attrTappUrl = deferredLinkResponse.attrTappUrl,
+        influencer = deferredLinkResponse.influencer,
+        data = deferredLinkResponse.data,
+        isFirstSession = true,
+        deepLink = deferredLinkResponse.deeplink
+    )
+
+    Logger.logInfo("response native: $response")
+
+    response.deepLink
+        ?.takeIf { it.isNotEmpty() }
+        ?.toUri()
+        ?.let { tappUri ->
+
+            tappService.handleImpression(tappUri) { result ->
+                result.fold(
+                    onSuccess = { tappUrlResponse ->
+                        Logger.logInfo("handleImpression Native success: $tappUrlResponse")
+
+                        val linkToken = url.linkToken(config.affiliate)
+
+                        if (linkToken != null) {
+                            Logger.logInfo("Extracted linkToken Native: $linkToken")
+                        }
+
+                        saveDeepLinkUrl(url.toString())
+                        saveLinkToken(linkToken)
+                        setProcessedReferralEngine()
+
+                        dependencies.tappInstance?.deferredLinkDelegate?.didReceiveDeferredLink(response)
+                    },
+                    onFailure = { error ->
+                        dependencies.tappInstance?.deferredLinkDelegate
+                            ?.didFailResolvingUrl(
+                                RequestModels.FailResolvingUrlResponse(
+                                    error = error.message
+                                        ?: "Couldn't resolve the deeplink Native $url",
+                                    url = url.toString()
+                                )
+                            )
+
+                        completion?.invoke(
+                            Result.failure(
+                                TappError.affiliateErrorResult(error, Affiliate.TAPP)
+                            )
+                        )
+                    }
+                )
+            }
+        }
 }
 
 internal fun TappEngine.fetchSecretsAndInitializeReferralEngineIfNeeded(

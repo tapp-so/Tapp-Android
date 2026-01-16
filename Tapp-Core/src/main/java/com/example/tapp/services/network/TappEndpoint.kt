@@ -124,7 +124,9 @@ internal object TappEndpoint {
         val body = mapOf(
             "tapp_token" to config.tappToken,
             "bundle_id" to config.bundleID,
-            "event_name" to eventNameString)
+            "event_name" to eventNameString,
+            "event_url" to (config.deepLinkUrl?:""),
+            "linkToken" to (config.linkToken?:""))
         return RequestModels.Endpoint(url, headers, body)
     }
 
@@ -141,10 +143,10 @@ internal object TappEndpoint {
 
         val body = mapOf(
             "tapp_token" to config.tappToken,
-            "bundle_id" to (config.bundleID ?: ""),
+            "bundle_id" to config.bundleID,
             "advertising_id" to request.advertisingId,
             "fp" to request.fp,
-            "os_name" to request.osName,
+            "platform" to request.platform,
             "os_version" to request.osVersion,
             "device_model" to request.deviceModel,
             "device_manufacturer" to request.deviceManufacturer,
@@ -152,10 +154,11 @@ internal object TappEndpoint {
             "screen_density" to request.screenDensity,
             "locale" to request.locale,
             "timezone" to request.timezone,
-            "installReferrer" to (request.installReferrer ?: "null"),
+            "referrer" to (request.installReferrer ?: "null"),
             "clickId" to (request.clickId ?: "null"),
-            "androidId" to (request.androidId ?: "null"),
+            "device_id" to (request.androidId ?: "null"),
             "battery_level" to (request.batteryLevel ?: -1),
+            "isCharging" to (request.isCharging ?: "null"),
             "total_ram_bytes" to (request.totalRamBytes ?: -1),
             "total_storage_bytes" to (request.totalStorageBytes ?: -1),
             "avail_storage_bytes" to (request.availStorageBytes ?: -1),
