@@ -39,11 +39,16 @@ class MainActivity : AppCompatActivity(), DeferredLinkDelegate {
              MainApplication.tapp.dummyMethod()
          }
 
-        val tappEventConfig = RequestModels.TappEvent(eventName = EventAction.tapp_click_button)
+        val tappEventConfig = RequestModels.TappEvent(
+            eventName = EventAction.tapp_click_button,
+            metadata = mapOf(
+                "items" to listOf(1, 2, 3)
+            )
+        )
         val tappEvent: Button = findViewById(R.id.tappEvent)
-        tappEvent.setOnClickListener {
-            MainApplication.tapp.handleTappEvent(tappEventConfig)
-        }
+            tappEvent.setOnClickListener {
+                MainApplication.tapp.handleTappEvent(tappEventConfig)
+            }
 
         val usernameEditText: EditText = findViewById(R.id.usernameEditText)
         val generateUrlButton: Button = findViewById(R.id.generateUrlButton)

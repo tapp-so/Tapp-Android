@@ -3,6 +3,7 @@ package com.example.tapp.services.network
 import android.net.Uri
 import com.example.tapp.dependencies.Dependencies
 import com.example.tapp.models.Environment
+import com.example.tapp.utils.Logger
 
 internal object TappEndpoint {
     private fun getBaseUrl(env: String): String {
@@ -109,10 +110,9 @@ internal object TappEndpoint {
         val config = dependencies.keystoreUtils.getConfig()
             ?: throw TappError.MissingConfiguration("Configuration is missing")
 
-        val eventNameString = if (eventRequest.eventName.isCustom) {
-            (eventRequest.eventName as RequestModels.EventAction.custom).customValue
-        } else {
-            eventRequest.eventName.toString()
+        val eventNameString = when (val e = eventRequest.eventName) {
+            is RequestModels.EventAction.custom -> e.customValue
+            else -> e.toString()
         }
 
         val url = "${getBaseUrl(config.env.environmentName())}event"
@@ -121,14 +121,54 @@ internal object TappEndpoint {
             "Authorization" to "Bearer ${config.authToken}"
         )
 
-        val body = mapOf(
+        val rawMetadata: Map<String, Any> = eventRequest.metadata ?: emptyMap()
+
+        val metadata = sanitizeMetadata(rawMetadata) { msg ->
+            Logger.logWarning(msg)
+        }
+
+        val body: Map<String, Any> = mapOf(
             "tapp_token" to config.tappToken,
             "bundle_id" to config.bundleID,
             "event_name" to eventNameString,
-            "event_url" to (config.deepLinkUrl?:""),
-            "linkToken" to (config.linkToken?:""))
+            "event_url" to (config.deepLinkUrl ?: ""),
+            "linkToken" to (config.linkToken ?: ""),
+            "os" to "android",
+            "metadata" to metadata
+        )
+
         return RequestModels.Endpoint(url, headers, body)
     }
+
+    private fun sanitizeMetadata(
+        metadata: Map<String, Any>,
+        logger: (String) -> Unit
+    ): Map<String, Any> {
+        val cleaned = LinkedHashMap<String, Any>(metadata.size)
+
+        metadata.forEach { (k, v) ->
+            val ok =
+                v is String ||
+                        v is Boolean ||
+                        v is Number
+
+            // Extra JSON-safety: reject NaN/Infinity
+            val finite = when (v) {
+                is Double -> v.isFinite()
+                is Float -> v.isFinite()
+                else -> true
+            }
+
+            if (ok && finite) {
+                cleaned[k] = v
+            } else {
+                logger("Dropping invalid metadata key='$k' type='${v::class.qualifiedName}' value='$v'")
+            }
+        }
+
+        return cleaned
+    }
+
 
     fun getDeferredLink(dependencies: Dependencies, request: RequestModels.DeferredLinkRequest): RequestModels.Endpoint {
         val config = dependencies.keystoreUtils.getConfig()
