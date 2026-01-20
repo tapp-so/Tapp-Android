@@ -66,8 +66,10 @@ class RequestModels {
         val eventAction: Int,         // 1: Click, 2: Impression, 3: Count, -1: Custom
         val eventCustomAction: Any    // false or a String if eventAction is -1
     )
+
     data class TappEvent(
         val eventName: EventAction,
+        val metadata: Map<String, Any>? = null
     )
 
     data class TappEventResponse(
