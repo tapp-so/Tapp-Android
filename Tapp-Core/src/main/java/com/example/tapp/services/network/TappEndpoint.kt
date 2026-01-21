@@ -33,7 +33,8 @@ internal object TappEndpoint {
             "tapp_token" to config.tappToken,
             "bundle_id" to (config.bundleID?:false),
             "android_id" to (config.androidId?:false),
-            "deeplink" to deepLink
+            "deeplink" to deepLink,
+            "os" to "android"
         )
 
         return RequestModels.Endpoint(url, headers, body)
