@@ -237,8 +237,11 @@ internal fun TappEngine.handleReferralCallbackNative(
                             Logger.logInfo("Extracted linkToken Native: $linkToken")
                         }
 
-                        saveDeepLinkUrl(url.toString())
-                        saveLinkToken(linkToken)
+                        if(!tappUrlResponse.error){
+                            saveDeepLinkUrl(url.toString())
+                            saveLinkToken(linkToken)
+                        }
+
                         setProcessedReferralEngine()
 
                         dependencies.tappInstance?.deferredLinkDelegate?.didReceiveDeferredLink(response)
