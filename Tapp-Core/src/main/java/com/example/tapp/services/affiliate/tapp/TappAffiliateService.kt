@@ -213,12 +213,12 @@ internal class TappAffiliateService(private val dependencies: Dependencies) : Af
                     RequestModels.TappLinkDataResponse(
                         error = jsonResponse.optBoolean("error", true),
                         message = jsonResponse.optString("message", "Ok"),
-                        tappUrl = jsonResponse.optString("tapp_url", "tapp_url didn't returned"),
-                        attrTappUrl = jsonResponse.optString("attr_tapp_url", "attr_tapp_url didn't returned"),
-                        influencer = jsonResponse.optString("influencer", "influencer didn't returned"),
+                        tappUrl = jsonResponse.optString("tapp_url", "tapp_url was not returned"),
+                        attrTappUrl = jsonResponse.optString("attr_tapp_url", "attr_tapp_url was not returned"),
+                        influencer = jsonResponse.optString("influencer", "influencer was not returned"),
                         data = dataMap,
                         isFirstSession = finalIsFirstSession,
-                        deepLink = jsonResponse.optString("deepLink", "deepLink didn't returned")
+                        deepLink = jsonResponse.optString("deepLink", "deepLink was not returned")
                     )
                 },
                 onFailure = { exception ->
