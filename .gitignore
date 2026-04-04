@@ -1,13 +1,13 @@
-# Gradle
+# Gradle / build outputs
 .gradle/
 **/build/
+build/
 
 # Android Studio / IntelliJ
 .idea/
 *.iml
 *.ipr
 *.iws
-
 # Local config
 local.properties
 
