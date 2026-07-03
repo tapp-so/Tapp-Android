@@ -10,6 +10,7 @@ import com.example.tapp.models.TappURLParamKey
 import com.example.tapp.models.linkToken
 import com.example.tapp.models.param
 import com.example.tapp.services.affiliate.AffiliateService
+import com.example.tapp.services.network.requireBackendSuccess
 import com.example.tapp.services.network.RequestModels
 import com.example.tapp.services.network.TappEndpoint
 import com.example.tapp.services.network.TappError
@@ -66,7 +67,9 @@ internal class TappAffiliateService(private val dependencies: Dependencies) : Af
         val endpoint = TappEndpoint.generateAffiliateUrl(dependencies,generateUrlRequest)
 
         try {
-            val result = dependencies.networkManager.postRequest(endpoint.url, endpoint.body!!, endpoint.headers)
+            val result = dependencies.networkManager
+                .postRequest(endpoint.url, endpoint.body!!, endpoint.headers)
+                .requireBackendSuccess()
             result.fold(
                 onSuccess = { jsonResponse ->
                     RequestModels.AffiliateUrlResponse(
@@ -99,7 +102,9 @@ internal class TappAffiliateService(private val dependencies: Dependencies) : Af
         val endpoint = TappEndpoint.secrets(dependencies)
 
         CoroutineScope(Dispatchers.IO).launch {
-            val result = dependencies.networkManager.postRequest(endpoint.url, endpoint.body, endpoint.headers)
+            val result = dependencies.networkManager
+                .postRequest(endpoint.url, endpoint.body, endpoint.headers)
+                .requireBackendSuccess()
             withContext(Dispatchers.Main) {
                 result.fold(
                     onSuccess = { jsonResponse ->
@@ -125,7 +130,9 @@ internal class TappAffiliateService(private val dependencies: Dependencies) : Af
         val endpoint = TappEndpoint.deeplink(dependencies, deepLink = url)
 
         CoroutineScope(Dispatchers.IO).launch {
-            val networkResult = dependencies.networkManager.postRequest(endpoint.url, endpoint.body, endpoint.headers)
+            val networkResult = dependencies.networkManager
+                .postRequest(endpoint.url, endpoint.body, endpoint.headers)
+                .requireBackendSuccess()
             withContext(Dispatchers.Main) {
                 networkResult.fold(
                     onSuccess = { jsonObject ->
@@ -147,7 +154,9 @@ internal class TappAffiliateService(private val dependencies: Dependencies) : Af
         return withContext(Dispatchers.IO) {
             try {
                 // Execute the POST request
-                val result = dependencies.networkManager.postRequest(endpoint.url, endpoint.body, endpoint.headers)
+                val result = dependencies.networkManager
+                    .postRequest(endpoint.url, endpoint.body, endpoint.headers)
+                    .requireBackendSuccess()
 
                 // Handle the result
                 result.fold(
@@ -196,7 +205,9 @@ internal class TappAffiliateService(private val dependencies: Dependencies) : Af
         val endpoint = TappEndpoint.fetchLinkData(dependencies, fetchDataRequest)
 
         return try {
-            val result = dependencies.networkManager.postRequest(endpoint.url, endpoint.body, endpoint.headers)
+            val result = dependencies.networkManager
+                .postRequest(endpoint.url, endpoint.body, endpoint.headers)
+                .requireBackendSuccess()
             result.fold(
                 onSuccess = { jsonResponse ->
                     val dataMap: Map<String, String> = jsonResponse.optJSONObject("data")?.let { json ->

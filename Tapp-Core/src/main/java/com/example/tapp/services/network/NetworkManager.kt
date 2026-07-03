@@ -67,9 +67,11 @@ class NetworkManager {
 
             // Log and parse JSON response
             println("Raw Response: $responseText")
-            val jsonResponse = JSONObject(responseText)
-            println("Parsed Response: $jsonResponse")
-            Result.success(jsonResponse)
+            val parsedResponse = BackendResponseParser.parseHttpResponse(responseCode, responseText)
+            parsedResponse.onSuccess { jsonResponse ->
+                println("Parsed Response: $jsonResponse")
+            }
+            parsedResponse
 
         } catch (e: Exception) {
             println("Error during $method request: ${e.localizedMessage}")
