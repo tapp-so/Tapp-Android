@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.example.tapp.services.affiliate.tapp.DeferredLinkDelegate
@@ -21,13 +22,18 @@ class MainActivity : AppCompatActivity(), DeferredLinkDelegate {
 
         MainApplication.tapp.deferredLinkDelegate = this
 
-//        val eventButton: Button = findViewById(R.id.eventButton)
-//        eventButton.setOnClickListener {
-//            val customEvent = RequestModels.TappEvent(
-//                eventName = RequestModels.EventAction.tapp_begin_tutorial
-//            )
-//            MainApplication.tapp.handleTappEvent(customEvent)
-//        }
+        val eventButton: Button = findViewById(R.id.eventButton)
+        eventButton.setOnClickListener {
+            val event = RequestModels.TappEvent(
+                eventName = EventAction.tapp_begin_tutorial,
+                metadata = mapOf(
+                    "source" to "sample_app",
+                    "button" to "track_event"
+                )
+            )
+            MainApplication.tapp.handleTappEvent(event)
+            Toast.makeText(this, "Event request submitted", Toast.LENGTH_SHORT).show()
+        }
 
         val testEventButton: Button = findViewById(R.id.testEventButton)
         testEventButton.setOnClickListener {
