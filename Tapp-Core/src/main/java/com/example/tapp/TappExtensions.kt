@@ -117,12 +117,12 @@ internal fun TappEngine.handleReferralCallback(
     tappService.handleImpression(url) { result ->
         result.fold(
             onSuccess = { tappUrlResponse ->
-                Logger.logInfo("handleImpression success: $tappUrlResponse")
+                Logger.logInfo("Deeplink impression completed")
 
                 val linkToken = url.linkToken(config.affiliate);
 
                 if (linkToken != null) {
-                    Logger.logInfo("Extracted linkToken: $linkToken")
+                    Logger.logInfo("Link token extracted")
                 }
 
                 // Save the deep link URL and link token in configuration
@@ -219,7 +219,11 @@ internal fun TappEngine.handleReferralCallbackNative(
         deepLink = deferredLinkResponse.deeplink
     )
 
-    Logger.logInfo("response native: $response")
+    Logger.logInfo(
+        "Native deferred link response prepared: error=${response.error}, " +
+                "has_tapp_url=${!response.tappUrl.isNullOrBlank()}, " +
+                "has_deep_link=${!response.deepLink.isNullOrBlank()}"
+    )
 
     response.deepLink
         ?.takeIf { it.isNotEmpty() }
@@ -229,12 +233,12 @@ internal fun TappEngine.handleReferralCallbackNative(
             tappService.handleImpression(tappUri) { result ->
                 result.fold(
                     onSuccess = { tappUrlResponse ->
-                        Logger.logInfo("handleImpression Native success: $tappUrlResponse")
+                        Logger.logInfo("Native deeplink impression completed")
 
                         val linkToken = url.linkToken(config.affiliate)
 
                         if (linkToken != null) {
-                            Logger.logInfo("Extracted linkToken Native: $linkToken")
+                            Logger.logInfo("Native link token extracted")
                         }
 
                         if(!tappUrlResponse.error){
@@ -382,12 +386,12 @@ internal fun TappEngine.saveDeepLinkUrl(deepLinkUrl: String?) {
         return
     }
 
-    Logger.logInfo("Saving deep link URL: $deepLinkUrl")
+    Logger.logInfo("Saving deep link URL")
     val config = dependencies.keystoreUtils.getConfig()
     if (config != null) {
         val updatedConfig = config.copy(deepLinkUrl = deepLinkUrl)
         dependencies.keystoreUtils.saveConfig(updatedConfig)
-        Logger.logInfo("Deep link URL saved: $deepLinkUrl")
+        Logger.logInfo("Deep link URL saved")
     } else {
         Logger.logError("Failed to save deep link URL: configuration is null")
     }
@@ -399,12 +403,12 @@ internal fun TappEngine.saveLinkToken(linkToken: String?) {
         return
     }
 
-    Logger.logInfo("Saving linkToken: $linkToken")
+    Logger.logInfo("Saving link token")
     val config = dependencies.keystoreUtils.getConfig()
     if (config != null) {
         val updatedConfig = config.copy(linkToken = linkToken)
         dependencies.keystoreUtils.saveConfig(updatedConfig)
-        Logger.logInfo("linkToken saved: $linkToken")
+        Logger.logInfo("Link token saved")
     } else {
         Logger.logError("Failed to save linkToken: configuration is null")
     }
@@ -417,7 +421,7 @@ internal fun TappEngine.setProcessedReferralEngine() {
     if (config != null) {
         val updatedConfig = config.copy(hasProcessedReferralEngine = true)
         dependencies.keystoreUtils.saveConfig(updatedConfig)
-        Logger.logInfo("Updated hasProcessedReferralEngine to true in config: $updatedConfig")
+        Logger.logInfo("Updated hasProcessedReferralEngine to true")
     } else {
         Logger.logWarning("Cannot set hasProcessedReferralEngine to true: config is null")
     }

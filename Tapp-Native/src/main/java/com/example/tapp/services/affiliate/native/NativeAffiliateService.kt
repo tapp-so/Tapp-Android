@@ -74,7 +74,7 @@ internal class NativeAffiliateService(private val dependencies: Dependencies) : 
 
     private fun handleDeferredLinkResponse(deferredLinkResponse: RequestModels.DeferredLinkResponse?) {
         if (deferredLinkResponse?.deeplink != null) {
-            Logger.logInfo("Received native DeferredLinkResponse: ${deferredLinkResponse.deeplink}")
+            Logger.logInfo("Received native deferred link response")
             // Ensure SDK callback runs on main thread (prevents UI threading issues downstream)
             val run = {
                 dependencies.tappInstance?.appWillOpenIntNative(deferredLinkResponse, null) ?: run {

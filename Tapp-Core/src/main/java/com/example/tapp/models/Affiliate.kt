@@ -1,6 +1,7 @@
 package com.example.tapp.models
 
 import android.net.Uri
+import com.example.tapp.utils.Logger
 import kotlinx.serialization.Serializable
 import java.net.URL
 
@@ -52,7 +53,7 @@ fun Uri.linkToken(affiliate: Affiliate): String? {
     }
 
     if (token.isNullOrEmpty()) {
-        android.util.Log.w("TappNative", "No link token found for affiliate=$affiliate in URL: $this")
+        Logger.logWarning("No link token found for affiliate=$affiliate")
     }
 
     return token

@@ -40,7 +40,7 @@ object TappNative {
                     getInstallReferrerSafe(config)
                 } ?: Pair(null, null)
                 if (installReferrerRaw != null)
-                    Logger.logInfo("Install Referrer fetched: $installReferrerRaw (click_id=$clickIdFromReferrer)")
+                    Logger.logInfo("Install Referrer fetched: has_click_id=${!clickIdFromReferrer.isNullOrBlank()}")
                 else
                     Logger.logInfo("No Install Referrer available or timed out.")
 
@@ -54,7 +54,7 @@ object TappNative {
                 when {
                     isLatEnabled -> Logger.logInfo("GAID retrieved but LAT enabled; skipping Advertising ID.")
                     advertisingId.isEmpty() -> Logger.logWarning("GAID not available (timeout or empty). Proceeding without it.")
-                    else -> Logger.logInfo("GAID retrieved successfully: $advertisingId")
+                    else -> Logger.logInfo("GAID retrieved successfully")
                 }
 
                 val androidId = try {
@@ -89,7 +89,11 @@ object TappNative {
                 val clickIdForPayload = clickIdFromReferrer ?: "null"
 
                 Logger.logInfo("Building DeferredLinkRequest with fp=true, resolution=$resolution, density=$density")
-                Logger.logInfo("DEBUG placeholders -> installReferrer='$installReferrerForPayload', clickId='$clickIdForPayload'")
+                Logger.logInfo(
+                    "Fingerprint identifiers prepared: " +
+                            "has_install_referrer=${installReferrerRaw != null}, " +
+                            "has_click_id=${clickIdFromReferrer != null}"
+                )
 
                 val request = RequestModels.DeferredLinkRequest(
                     fp = true,
@@ -116,9 +120,10 @@ object TappNative {
                 // Log a concise summary of what will be sent
                 Logger.logInfo(
                     "DeferredLinkRequest summary: " +
-                            "advertisingId=${advertisingId.ifEmpty { "none" }}, " +
-                            "clickId=$clickIdForPayload, " +
-                            "installReferrerLen=${installReferrerForPayload.length}"
+                            "has_advertising_id=${advertisingId.isNotEmpty()}, " +
+                            "has_android_id=${!androidId.isNullOrBlank()}, " +
+                            "has_click_id=${clickIdFromReferrer != null}, " +
+                            "has_install_referrer=${installReferrerRaw != null}"
                 )
 
                 // ---- D) Call your backend
@@ -127,8 +132,11 @@ object TappNative {
                     val result = NativeApiService.fetchDeferredLink(dependencies, request)
                     val resp = result.getOrNull()
                     if (resp != null) {
-                        val chosenUrl = resp.tappUrl ?: resp.deeplink
-                        Logger.logInfo("Backend returned: tappUrl=${resp.tappUrl}, deeplink=${resp.deeplink}, chosen=${chosenUrl}")
+                        Logger.logInfo(
+                            "Deferred link backend response received: " +
+                                    "has_tapp_url=${!resp.tappUrl.isNullOrBlank()}, " +
+                                    "has_deep_link=${!resp.deeplink.isNullOrBlank()}"
+                        )
                     } else {
                         Logger.logWarning("Backend returned null (Result.getOrNull() == null)")
                     }
@@ -143,7 +151,7 @@ object TappNative {
 
                 // ---- E) Notify listener with the FULL response object
                 if (response != null) {
-                    Logger.logInfo("✅ Deferred link resolved (object): $response")
+                    Logger.logInfo("Deferred link resolved")
                     dispatchToMain {
                         // Listener now expects DeferredLinkResponse?
                         config.onDeferredDeeplinkResponseListener?.onDeferredDeeplinkResponse(response)
@@ -260,7 +268,7 @@ object TappNative {
                                         // Example Play redirect that produces the above raw (after Play decoding):
                                         // https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_source%3Dtapp%26utm_medium%3Dapp%26click_id%3DUJQd1qQL%26fpid%3D9544b14f-a1eb-4d02-a0cd-50565c91a83d
 
-                                        Logger.logInfo("Install Referrer response received: ${raw ?: "<null>"}")
+                                        Logger.logInfo("Install Referrer response received: has_value=${!raw.isNullOrBlank()}")
 
                                         val clickId = raw
                                             ?.takeIf { it.isNotBlank() }
@@ -269,7 +277,7 @@ object TappNative {
                                                 parsed.getQueryParameter("click_id")
                                             }
 
-                                        Logger.logInfo("Parsed click_id from referrer: ${clickId ?: "none"}")
+                                        Logger.logInfo("Install Referrer click ID parsed: present=${!clickId.isNullOrBlank()}")
                                         cont.resume(Pair(raw, clickId))
                                     }
 

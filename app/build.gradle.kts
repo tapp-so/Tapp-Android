@@ -1,3 +1,18 @@
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use(::load)
+    }
+}
+
+fun buildConfigString(value: String): String =
+    "\"${value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")}\""
+
+val sampleEnvironment = localProperties.getProperty("TAPP_SAMPLE_ENV", "SANDBOX")
+val sampleAuthToken = localProperties.getProperty("TAPP_SAMPLE_AUTH_TOKEN", "")
+val sampleTappToken = localProperties.getProperty("TAPP_SAMPLE_TAPP_TOKEN", "")
 
 plugins {
     id("com.android.application")
@@ -18,6 +33,27 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "TAPP_SAMPLE_ENV", buildConfigString(sampleEnvironment))
+        buildConfigField("String", "TAPP_SAMPLE_AUTH_TOKEN", buildConfigString(sampleAuthToken))
+        buildConfigField("String", "TAPP_SAMPLE_TAPP_TOKEN", buildConfigString(sampleTappToken))
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    flavorDimensions += "provider"
+    productFlavors {
+        create("native") {
+            dimension = "provider"
+            buildConfigField("String", "SAMPLE_PROVIDER", "\"TAPP_NATIVE\"")
+            buildConfigField("String", "SAMPLE_PROVIDER_LABEL", "\"Tapp Native\"")
+        }
+        create("adjust") {
+            dimension = "provider"
+            buildConfigField("String", "SAMPLE_PROVIDER", "\"ADJUST\"")
+            buildConfigField("String", "SAMPLE_PROVIDER_LABEL", "\"Adjust\"")
+        }
     }
 
     buildTypes {
@@ -39,7 +75,8 @@ android {
 }
 
 dependencies {
-    api(project(":Tapp-Native"))
+    add("nativeImplementation", project(":Tapp-Native"))
+    add("adjustImplementation", project(":Tapp-Adjust"))
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")

@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">tapp</string>
+    <string name="sample_configuration">Provider: %1$s\nEnvironment: %2$s\nStatus: %3$s</string>
+    <string name="sample_configuration_preview">Tapp SDK Sample</string>
+    <string name="sample_status_started">SDK start requested</string>
+    <string name="sample_status_missing_configuration">SDK not started — add sample credentials to local.properties</string>
+    <string name="track_adjust_event">Track Adjust Event</string>
+    <string name="adjust_event_submitted">Adjust event request submitted</string>
+    <string name="adjust_event_unavailable">Adjust event is available only in adjustDebug</string>
+    <string name="adjust_event_submission_failed">Adjust event request could not be submitted</string>
 </resources>

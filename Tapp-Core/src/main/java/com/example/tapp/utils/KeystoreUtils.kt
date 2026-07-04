@@ -63,14 +63,19 @@ class KeystoreUtils(context: Context) {
     @Synchronized
     internal fun saveConfig(config: InternalConfiguration) {
         val jsonConfig = json.encodeToString(config)
-        Logger.logInfo("Saving internal configuration: $jsonConfig")
+        Logger.logInfo(
+            "Internal configuration prepared: affiliate=${config.affiliate}, env=${config.env}, " +
+                    "bundle_id=${config.bundleID}, has_app_token=${!config.appToken.isNullOrBlank()}, " +
+                    "has_deep_link=${!config.deepLinkUrl.isNullOrBlank()}, " +
+                    "has_link_token=${!config.linkToken.isNullOrBlank()}"
+        )
         try {
             val encryptedConfig = encrypt(jsonConfig)
             val success = sharedPreferences.edit().putString("tapp_config", encryptedConfig).commit()
             if (!success) {
                 Logger.logError("Failed to commit configuration to SharedPreferences.")
             } else {
-                Logger.logInfo("Configuration successfully saved.")
+                Logger.logInfo("Internal configuration saved")
             }
         } catch (e: Exception) {
             Logger.logError("Failed to save configuration: ${e.localizedMessage}")
@@ -84,8 +89,6 @@ class KeystoreUtils(context: Context) {
         if (encryptedConfig == null) {
             Logger.logInfo("No configuration found in SharedPreferences.")
             return null
-        } else {
-            Logger.logInfo("Encrypted configuration retrieved.")
         }
 
         return try {
@@ -125,7 +128,6 @@ class KeystoreUtils(context: Context) {
 
             val ivBase64 = Base64.encodeToString(iv, Base64.NO_WRAP)
             val encryptedBase64 = Base64.encodeToString(encryptedData, Base64.NO_WRAP)
-            Logger.logInfo("Encrypted data: $encryptedBase64")
 
             "$ivBase64:$encryptedBase64"
         } catch (e: Exception) {
@@ -146,10 +148,7 @@ class KeystoreUtils(context: Context) {
             val spec = GCMParameterSpec(128, iv)
             cipher.init(Cipher.DECRYPT_MODE, getSecretKey(), spec)
             val decryptedData = cipher.doFinal(encryptedData)
-            val decryptedString = String(decryptedData, Charsets.UTF_8)
-            Logger.logInfo("Decrypted data: $decryptedString")
-
-            decryptedString
+            String(decryptedData, Charsets.UTF_8)
         } catch (e: Exception) {
             Logger.logError("Decryption failed: ${e.localizedMessage}")
             throw e

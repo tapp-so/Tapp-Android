@@ -1,5 +1,6 @@
 package com.example.tapp.services.network
 
+import com.example.tapp.utils.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -18,10 +19,10 @@ class NetworkManager {
         headers: Map<String, String> = emptyMap()
     ): Result<JSONObject> = withContext(Dispatchers.IO) {
         return@withContext try {
-            println("Starting $method request to $url")
-
             // Create URL and connection
             val connectionUrl = URL(url)
+            val endpointPath = connectionUrl.path.ifBlank { "/" }
+            Logger.logInfo("Starting $method request to $endpointPath")
             val connection = connectionUrl.openConnection() as HttpURLConnection
             connection.requestMethod = method
             connection.doInput = true
@@ -30,7 +31,6 @@ class NetworkManager {
             headers.forEach { (key, value) ->
                 connection.setRequestProperty(key, value)
             }
-            println("Headers: $headers")
 
             // If the method requires a body, write the parameters as JSON
             if (method in listOf("POST", "PUT", "PATCH")) {
@@ -44,8 +44,6 @@ class NetworkManager {
                     }
                 }.toString()
 
-                println("Request Body: $requestBody")
-
                 connection.outputStream.use { outputStream ->
                     OutputStreamWriter(outputStream, Charsets.UTF_8).use {
                         it.write(requestBody)
@@ -56,7 +54,7 @@ class NetworkManager {
 
             // Get response code and handle input or error stream
             val responseCode = connection.responseCode
-            println("Response Code: $responseCode")
+            Logger.logInfo("Response received: method=$method, path=$endpointPath, status=$responseCode")
 
             val responseText = if (responseCode in 200..299) {
                 connection.inputStream.bufferedReader().use(BufferedReader::readText)
@@ -65,15 +63,26 @@ class NetworkManager {
                     ?: "Unknown error"
             }
 
-            // Log and parse JSON response
-            println("Raw Response: $responseText")
-            val jsonResponse = JSONObject(responseText)
-            println("Parsed Response: $jsonResponse")
-            Result.success(jsonResponse)
+            val parsedResponse = BackendResponseParser.parseHttpResponse(responseCode, responseText)
+            parsedResponse.onSuccess {
+                Logger.logDebug("Parsed response received for $endpointPath")
+            }.onFailure { error ->
+                if (error is BackendApiException) {
+                    Logger.logWarning(
+                        "Backend error: path=$endpointPath, status=${error.statusCode ?: responseCode}, " +
+                                "error_code=${error.errorCode ?: "none"}, message=${error.backendMessage}"
+                    )
+                } else {
+                    Logger.logError(
+                        "Response parsing failed: path=$endpointPath, status=$responseCode, " +
+                                "error=${error::class.java.simpleName}"
+                    )
+                }
+            }
+            parsedResponse
 
         } catch (e: Exception) {
-            println("Error during $method request: ${e.localizedMessage}")
-            e.printStackTrace()
+            Logger.logError("$method request failed locally: ${e::class.java.simpleName}")
             Result.failure(e)
         }
     }

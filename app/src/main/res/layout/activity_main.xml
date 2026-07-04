@@ -10,7 +10,8 @@
         android:id="@+id/helloTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Tapp SDK Initialized!"
+        android:gravity="center"
+        android:text="@string/sample_configuration_preview"
         android:padding="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -28,21 +29,21 @@
         android:layout_marginTop="16dp"/>
 
     <Button
-        android:id="@+id/testEventButton"
+        android:id="@+id/adjustEventButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Simulate Test Event"
+        android:text="@string/track_adjust_event"
         app:layout_constraintTop_toBottomOf="@id/eventButton"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
 
     <Button
-        android:id="@+id/dummyButton"
+        android:id="@+id/testEventButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Test Dummy Function"
-        app:layout_constraintTop_toBottomOf="@id/testEventButton"
+        android:text="Simulate Test Event"
+        app:layout_constraintTop_toBottomOf="@id/adjustEventButton"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
@@ -52,7 +53,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="tappEvent"
-        app:layout_constraintTop_toBottomOf="@id/dummyButton"
+        app:layout_constraintTop_toBottomOf="@id/testEventButton"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
