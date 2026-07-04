@@ -163,7 +163,7 @@ internal object TappEndpoint {
             if (ok && finite) {
                 cleaned[k] = v
             } else {
-                logger("Dropping invalid metadata key='$k' type='${v::class.qualifiedName}' value='$v'")
+                logger("Dropping invalid metadata key='$k' type='${v::class.qualifiedName}'")
             }
         }
 

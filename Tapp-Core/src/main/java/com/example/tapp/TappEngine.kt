@@ -40,7 +40,7 @@ class TappEngine(val dependencies: Dependencies) {
             dependencies.context.contentResolver,
             Settings.Secure.ANDROID_ID
         )
-        Logger.logInfo("Android ID retrieved: $androidId")
+        Logger.logInfo("Android ID retrieved")
 
         val bundleID = dependencies.context.packageName
         Logger.logInfo("Bundle ID: $bundleID")
@@ -71,7 +71,13 @@ class TappEngine(val dependencies: Dependencies) {
             )
         }
 
-        Logger.logInfo("InternalConfig: $internalConfig")
+        Logger.logInfo(
+            "Internal configuration prepared: affiliate=${internalConfig.affiliate}, " +
+                    "env=${internalConfig.env}, bundle_id=${internalConfig.bundleID}, " +
+                    "has_app_token=${!internalConfig.appToken.isNullOrBlank()}, " +
+                    "has_deep_link=${!internalConfig.deepLinkUrl.isNullOrBlank()}, " +
+                    "has_link_token=${!internalConfig.linkToken.isNullOrBlank()}"
+        )
 
         // Save the configuration only if it has changed
         if (storedConfig == null || storedConfig != internalConfig) {
@@ -118,7 +124,7 @@ class TappEngine(val dependencies: Dependencies) {
         }
 
         if (!shouldProcess(url)) {
-            Logger.logInfo("URL is not processable. Skipping processing.$url")
+            Logger.logInfo("URL is not processable. Skipping processing.")
             completion?.invoke(Result.success(Unit))
             return
         }
@@ -151,7 +157,7 @@ class TappEngine(val dependencies: Dependencies) {
         }
 
         if (!shouldProcess(deferredLinkResponse.deeplink)) {
-            Logger.logInfo("URL is not processable. Skipping processing.${deferredLinkResponse.deeplink} ")
+            Logger.logInfo("URL is not processable. Skipping processing.")
             completion?.invoke(Result.success(Unit))
             return
         }
@@ -193,15 +199,11 @@ class TappEngine(val dependencies: Dependencies) {
     }
 
     fun appWillOpenIntent(url: String?){
-        Logger.logInfo("!@#$ Intent START")
-        Logger.logInfo("URL: ${url}")
-        Logger.logInfo("!@#$ Intent END")
+        Logger.logInfo("Intent deeplink received: has_url=${!url.isNullOrBlank()}")
     }
 
     fun appWillOpenInstallReferrerStateListener(url: String?){
-        Logger.logInfo("!@#$ InstallReferrerStateListener START")
-        Logger.logInfo("URL: ${url}")
-        Logger.logInfo("!@#$ InstallReferrerStateListener END")
+        Logger.logInfo("Install referrer deeplink received: has_url=${!url.isNullOrBlank()}")
     }
 
     fun logConfig() {
@@ -213,16 +215,15 @@ class TappEngine(val dependencies: Dependencies) {
             return
         }
 
-        // Log all the details of the configuration
-        Logger.logInfo("Current SDK Configuration:")
-        Logger.logInfo("Auth Token: ${storedConfig.authToken}")
-        Logger.logInfo("Environment: ${storedConfig.env}")
-        Logger.logInfo("Tapp Token: ${storedConfig.tappToken}")
-        Logger.logInfo("Affiliate: ${storedConfig.affiliate}")
-        Logger.logInfo("Bundle ID: ${storedConfig.bundleID ?: "Not Set"}")
-        Logger.logInfo("Android ID: ${storedConfig.androidId ?: "Not Set"}")
-        Logger.logInfo("App Token: ${storedConfig.appToken ?: "Not Set"}")
-        Logger.logInfo("Referral Engine Processed: ${storedConfig.hasProcessedReferralEngine}")
+        Logger.logInfo(
+            "Current SDK configuration: affiliate=${storedConfig.affiliate}, env=${storedConfig.env}, " +
+                    "bundle_id=${storedConfig.bundleID}, has_auth_token=${storedConfig.authToken.isNotBlank()}, " +
+                    "has_tapp_token=${storedConfig.tappToken.isNotBlank()}, " +
+                    "has_app_token=${!storedConfig.appToken.isNullOrBlank()}, " +
+                    "has_deep_link=${!storedConfig.deepLinkUrl.isNullOrBlank()}, " +
+                    "has_link_token=${!storedConfig.linkToken.isNullOrBlank()}, " +
+                    "referral_engine_processed=${storedConfig.hasProcessedReferralEngine}"
+        )
     }
 
     fun shouldProcess(url: String?):Boolean {

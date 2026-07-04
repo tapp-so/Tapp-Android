@@ -39,7 +39,7 @@ internal class AdjustAffiliateService(private val dependencies: Dependencies) : 
             }
 
             val adjustConfig = AdjustConfig(context, appToken, adjustEnvironment)
-            adjustConfig.setLogLevel(LogLevel.VERBOSE)
+            adjustConfig.setLogLevel(LogLevel.INFO)
 
             // Register deferred deeplink listener.
             adjustConfig.setOnDeferredDeeplinkResponseListener { deeplink ->
