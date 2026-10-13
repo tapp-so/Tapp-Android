@@ -5,6 +5,7 @@ import android.content.res.Resources
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import androidx.annotation.VisibleForTesting
 import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
 import com.example.tapp.dependencies.Dependencies
@@ -12,16 +13,67 @@ import com.example.tapp.services.network.NativeApiService
 import com.example.tapp.services.network.RequestModels
 import com.example.tapp.utils.Logger
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
+/** Outcome of reading the Play Install Referrer. */
+internal sealed class InstallReferrerResult {
+    /** Play answered OK. [raw] is the referrer exactly as delivered (may be null or empty). */
+    data class Retrieved(val raw: String?, val clickId: String?) : InstallReferrerResult()
+
+    /** Not supported, service unavailable, error or timeout: the referrer content is unknown. */
+    object Unavailable : InstallReferrerResult()
+}
+
+/** What to do after a failed `/ref/fingerprint` attempt. */
+internal enum class FingerprintStep { RETRY, MARK_NOT_ATTRIBUTED, STOP }
+
+internal fun nextFingerprintStep(
+    failure: NativeApiService.DeferredLinkFailure,
+    referrerRetrieved: Boolean
+): FingerprintStep = when (failure) {
+    NativeApiService.DeferredLinkFailure.NO_MATCH -> FingerprintStep.MARK_NOT_ATTRIBUTED
+    // Without the real referrer the 422 only reflects the "null" placeholder we sent.
+    NativeApiService.DeferredLinkFailure.MISSING_FPID ->
+        if (referrerRetrieved) FingerprintStep.MARK_NOT_ATTRIBUTED else FingerprintStep.STOP
+    NativeApiService.DeferredLinkFailure.RETRYABLE -> FingerprintStep.RETRY
+    NativeApiService.DeferredLinkFailure.NON_RETRYABLE -> FingerprintStep.STOP
+}
+
+/**
+ * The backend can only attribute an Android install through the `fpid` the Tapp landing page puts
+ * into the Play referrer. A referrer that does not even contain the text "fpid" can never match.
+ */
+internal fun InstallReferrerResult.Retrieved.mayContainFingerprintId(): Boolean =
+    raw?.contains("fpid", ignoreCase = true) == true
+
 object TappNative {
     @Volatile private var initialized = false
+
+    private const val MAX_FINGERPRINT_ATTEMPTS = 2
+    private const val FINGERPRINT_RETRY_DELAY_MS = 200L
+
+    @VisibleForTesting
+    internal var installReferrerSource: suspend (NativeConfig) -> InstallReferrerResult =
+        { getInstallReferrerSafe(it) }
+
+    @VisibleForTesting
+    @Volatile
+    internal var lastInitJob: Job? = null
+
+    @VisibleForTesting
+    internal fun resetForTesting() {
+        initialized = false
+        lastInitJob = null
+        installReferrerSource = { getInstallReferrerSafe(it) }
+    }
 
     @SuppressLint("HardwareIds")
     fun init(dependencies: Dependencies, config: NativeConfig) {
@@ -32,17 +84,27 @@ object TappNative {
         initialized = true
         Logger.logInfo("TappNative: Initializing and checking for a deferred link...")
 
-        CoroutineScope(Dispatchers.IO).launch {
+        lastInitJob = CoroutineScope(Dispatchers.IO).launch {
             try {
                 // ---- A) Try to read Play Install Referrer
                 Logger.logInfo("Attempting to read Install Referrer…")
-                val (installReferrerRaw, clickIdFromReferrer) = withTimeoutOrNull(2000L) {
-                    getInstallReferrerSafe(config)
-                } ?: Pair(null, null)
+                val referrer = withTimeoutOrNull(2000L) {
+                    installReferrerSource(config)
+                } ?: InstallReferrerResult.Unavailable
+                val installReferrerRaw = (referrer as? InstallReferrerResult.Retrieved)?.raw
+                val clickIdFromReferrer = (referrer as? InstallReferrerResult.Retrieved)?.clickId
                 if (installReferrerRaw != null)
                     Logger.logInfo("Install Referrer fetched: has_click_id=${!clickIdFromReferrer.isNullOrBlank()}")
                 else
                     Logger.logInfo("No Install Referrer available or timed out.")
+
+                if (referrer is InstallReferrerResult.Retrieved && !referrer.mayContainFingerprintId()) {
+                    Logger.logInfo("Install Referrer has no fpid; install is not attributable. Skipping fingerprint request.")
+                    dispatchToMain {
+                        config.onDeferredDeeplinkResponseListener?.onDeferredDeeplinkResponse(notAttributedResponse())
+                    }
+                    return@launch
+                }
 
                 // ---- B) Try to get GAID
                 Logger.logInfo("Fetching GAID (Advertising ID)…")
@@ -126,32 +188,20 @@ object TappNative {
                             "has_install_referrer=${installReferrerRaw != null}"
                 )
 
-                // ---- D) Call your backend
-                suspend fun callOnce(): RequestModels.DeferredLinkResponse? = withTimeoutOrNull(4000L) {
-                    Logger.logInfo("Calling backend for deferred link resolution…")
-                    val result = NativeApiService.fetchDeferredLink(dependencies, request)
-                    val resp = result.getOrNull()
-                    if (resp != null) {
-                        Logger.logInfo(
-                            "Deferred link backend response received: " +
-                                    "has_tapp_url=${!resp.tappUrl.isNullOrBlank()}, " +
-                                    "has_deep_link=${!resp.deeplink.isNullOrBlank()}"
-                        )
-                    } else {
-                        Logger.logWarning("Backend returned null (Result.getOrNull() == null)")
-                    }
-                    resp
-                }
-
-                val response = callOnce() ?: run {
-                    Logger.logWarning("First backend call returned null, retrying once after 200ms...")
-                    delay(200L)
-                    callOnce()
-                }
+                // ---- D) Call your backend (one retry, transient failures only)
+                val response = resolveDeferredLink(
+                    dependencies,
+                    request,
+                    referrerRetrieved = referrer is InstallReferrerResult.Retrieved
+                )
 
                 // ---- E) Notify listener with the FULL response object
                 if (response != null) {
-                    Logger.logInfo("Deferred link resolved")
+                    if (response.error == true) {
+                        Logger.logInfo("Backend reported no attribution for this install")
+                    } else {
+                        Logger.logInfo("Deferred link resolved")
+                    }
                     dispatchToMain {
                         // Listener now expects DeferredLinkResponse?
                         config.onDeferredDeeplinkResponseListener?.onDeferredDeeplinkResponse(response)
@@ -159,11 +209,74 @@ object TappNative {
                 } else {
                     Logger.logInfo("No deferred link found for this user (response was null).")
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Logger.logError("❌ Exception while fetching deferred link: ${e.message}")
             }
         }
     }
+
+    /**
+     * Returns the backend response, [notAttributedResponse] when the backend definitively reports
+     * no attribution, or null when the outcome is unknown (the next launch tries again).
+     */
+    private suspend fun resolveDeferredLink(
+        dependencies: Dependencies,
+        request: RequestModels.DeferredLinkRequest,
+        referrerRetrieved: Boolean
+    ): RequestModels.DeferredLinkResponse? {
+        for (attempt in 1..MAX_FINGERPRINT_ATTEMPTS) {
+            if (attempt > 1) {
+                Logger.logWarning("Retrying deferred link request once after ${FINGERPRINT_RETRY_DELAY_MS}ms...")
+                delay(FINGERPRINT_RETRY_DELAY_MS)
+            }
+
+            val result = withTimeoutOrNull(4000L) {
+                Logger.logInfo("Calling backend for deferred link resolution…")
+                NativeApiService.fetchDeferredLink(dependencies, request)
+            }
+            if (result == null) {
+                Logger.logWarning("Deferred link request timed out")
+                continue
+            }
+
+            val resp = result.getOrNull()
+            if (resp != null) {
+                Logger.logInfo(
+                    "Deferred link backend response received: " +
+                            "has_tapp_url=${!resp.tappUrl.isNullOrBlank()}, " +
+                            "has_deep_link=${!resp.deeplink.isNullOrBlank()}"
+                )
+                return resp
+            }
+
+            val error = result.exceptionOrNull() ?: return null
+            if (error is CancellationException) throw error
+
+            val failure = NativeApiService.classifyDeferredLinkFailure(error)
+            when (nextFingerprintStep(failure, referrerRetrieved)) {
+                FingerprintStep.RETRY -> Logger.logWarning("Deferred link request failed: failure=$failure")
+                FingerprintStep.MARK_NOT_ATTRIBUTED -> return notAttributedResponse()
+                FingerprintStep.STOP -> {
+                    Logger.logWarning("Deferred link request failed permanently for this launch: failure=$failure")
+                    return null
+                }
+            }
+        }
+        return null
+    }
+
+    /** Same shape the backend used for "no match" before it switched to HTTP 4xx. */
+    private fun notAttributedResponse() = RequestModels.DeferredLinkResponse(
+        deeplink = null,
+        fingerprint = null,
+        error = true,
+        tappUrl = null,
+        attrTappUrl = null,
+        influencer = null,
+        data = null
+    )
 
     private fun dispatchToMain(block: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) block()
@@ -235,16 +348,16 @@ object TappNative {
 
     /**
      * Safely reads the Play Install Referrer once.
-     * Returns Pair(rawReferrerString, clickId) or (null, null).
+     * Returns [InstallReferrerResult.Retrieved] when Play answered OK, otherwise [InstallReferrerResult.Unavailable].
      */
     private suspend fun getInstallReferrerSafe(
         config: NativeConfig,
         timeoutMs: Long = 2_500L
-    ): Pair<String?, String?> {
+    ): InstallReferrerResult {
         // Timeout is important because on some devices/Play Services states,
         // onInstallReferrerSetupFinished() may never be called and the coroutine would hang forever.
         val result = withTimeoutOrNull(timeoutMs) {
-            suspendCancellableCoroutine<Pair<String?, String?>> { cont ->
+            suspendCancellableCoroutine<InstallReferrerResult> { cont ->
                 try {
                     val client = InstallReferrerClient.newBuilder(config.context).build()
                     Logger.logInfo("Connecting to Install Referrer service…")
@@ -278,27 +391,27 @@ object TappNative {
                                             }
 
                                         Logger.logInfo("Install Referrer click ID parsed: present=${!clickId.isNullOrBlank()}")
-                                        cont.resume(Pair(raw, clickId))
+                                        cont.resume(InstallReferrerResult.Retrieved(raw, clickId))
                                     }
 
                                     InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED -> {
                                         Logger.logWarning("Install Referrer not supported on this device.")
-                                        cont.resume(Pair(null, null))
+                                        cont.resume(InstallReferrerResult.Unavailable)
                                     }
 
                                     InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE -> {
                                         Logger.logWarning("Install Referrer service unavailable.")
-                                        cont.resume(Pair(null, null))
+                                        cont.resume(InstallReferrerResult.Unavailable)
                                     }
 
                                     else -> {
                                         Logger.logWarning("Install Referrer returned unknown code: $code")
-                                        cont.resume(Pair(null, null))
+                                        cont.resume(InstallReferrerResult.Unavailable)
                                     }
                                 }
                             } catch (e: Exception) {
                                 Logger.logError("Error parsing Install Referrer: ${e.message}")
-                                cont.resume(Pair(null, null))
+                                cont.resume(InstallReferrerResult.Unavailable)
                             } finally {
                                 runCatching { client.endConnection() }
                             }
@@ -311,14 +424,14 @@ object TappNative {
                     })
                 } catch (e: Exception) {
                     Logger.logError("Failed to initialize Install Referrer client: ${e.message}")
-                    cont.resume(Pair(null, null))
+                    cont.resume(InstallReferrerResult.Unavailable)
                 }
             }
         }
 
         if (result == null) {
             Logger.logWarning("Install Referrer timed out after ${timeoutMs}ms")
-            return Pair(null, null)
+            return InstallReferrerResult.Unavailable
         }
 
         return result
