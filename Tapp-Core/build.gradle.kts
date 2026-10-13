@@ -57,6 +57,11 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     }
 }
 
+// CoreManifestTest reads the production manifest, so manifest changes must rerun unit tests.
+tasks.withType<Test>().configureEach {
+    inputs.file("src/main/AndroidManifest.xml")
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
