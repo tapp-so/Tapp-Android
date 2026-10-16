@@ -130,9 +130,13 @@ internal class TappAffiliateService(private val dependencies: Dependencies) : Af
         val endpoint = TappEndpoint.deeplink(dependencies, deepLink = url)
 
         CoroutineScope(Dispatchers.IO).launch {
+            // The backend answers a repeat impression for the same device (< 90 days) with
+            // HTTP 200 {"error":true,"message":"Impression already incremented ..."}. That is a
+            // non-fatal "already counted" outcome, so only non-2xx and success:false fail here;
+            // callers read TappUrlResponse.error.
             val networkResult = dependencies.networkManager
                 .postRequest(endpoint.url, endpoint.body, endpoint.headers)
-                .requireBackendSuccess()
+                .requireBackendSuccess(rejectLegacyError = false)
             withContext(Dispatchers.Main) {
                 networkResult.fold(
                     onSuccess = { jsonObject ->
